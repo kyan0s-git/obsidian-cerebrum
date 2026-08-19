@@ -1,92 +1,101 @@
-# Obsidian Sample Plugin
+# Cerebrum
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+A second brain is easier to think with when you can see it. Cerebrum replaces
+tree digging with two views: a content browser that shows notes as cards you can
+read at a glance, and a link graph that draws exactly what each page points at.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+Neither view is told how your vault is organised. Folders are read from the vault
+every time a view is drawn, so a new folder — top level, nested, next to `raw/`
+and `wiki/` or nowhere near them — appears on its own, keeps a stable colour, and
+needs no configuration.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+## The browser
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+Open it from the ribbon (**Browse the vault**) or the command palette.
 
-## First time developing plugins?
+- **Spaces** — every folder in the vault, discovered at runtime. The rail lists
+  the top level, then unfolds the branch you are browsing so you never lose the
+  rest of the vault while drilling down.
+- **Collections** — computed from the link structure rather than the folder
+  layout: all notes, recently edited, link hubs (what the vault points at most),
+  orphans (nothing in, nothing out), and missing pages (links written for notes
+  that do not exist yet, with the pages asking for them).
+- **Tags** — every tag in the vault with its note count, as a one-click filter.
+- **Cards** show the title (frontmatter `title` wins), the folder, an excerpt
+  pulled from the note itself (or its `description`/`summary` frontmatter), tags,
+  the last edit, and how many links point in and out. A list layout is a click
+  away when you want density instead.
+- Search runs over titles, paths, tags and aliases with Obsidian's own fuzzy
+  matcher. Sorting and grouping (by folder, space, tag or date) sit next to it.
+- Click opens, `Ctrl`/`Cmd`-click opens a tab, middle click opens a tab, right
+  click gives the normal file menu with everything your other plugins add to it.
 
-Quick starting guide for new plugin devs:
+## The graph
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+Open it from the ribbon (**Open the link graph**), the command palette, or the
+right-click menu of any note.
 
-## Releasing new releases
+The graph is built from each page's own references rather than a summarised link
+table, so it shows what is actually written:
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+- **Inline links, embeds and frontmatter links** are all drawn, each with its own
+  line style, in the direction they were written. Mutual links are marked.
+- **Links to pages that do not exist yet** become hollow ghost nodes — clicking
+  one creates and opens the note the way any other unresolved link does.
+- **Node size** follows how many links touch a page; **node colour** follows its
+  top level folder, with a legend that updates as the vault changes.
+- **Local graph mode** follows the active note at a depth you choose, and the
+  filter box narrows the graph to matching paths, titles or tags — links to
+  pages outside the filter are left out rather than dragging them back in.
+- Drag to pin a node, drag the background to pan, scroll to zoom, double click to
+  re-centre the graph on a page. Layout is a Barnes-Hut force simulation that
+  stops as soon as it settles, so an idle graph costs nothing.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+## Settings
 
-## Adding your plugin to the community plugin list
+**Settings → Community plugins → Cerebrum** covers excerpts, whether spaces
+include nested notes, attachments, the recent window, hidden folders, and the
+graph's node limit and force strengths.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+Hidden folders are matched by path prefix, one per line, and apply to both views.
 
-## How to use
+## Everything stays local
 
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+Cerebrum reads the vault through Obsidian's own APIs and writes nothing except
+its settings. There are no network requests, no telemetry, and no files touched
+outside the ones you open yourself.
 
-## Manually installing the plugin
+## Development
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
+```bash
+npm install
+npm run dev     # watch build into main.js
+npm run build   # typecheck, then a production bundle
+npm run lint    # Obsidian's own ESLint plugin
 ```
 
-If you have multiple URLs, you can also do:
+Source layout:
 
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
+```
+src/
+  main.ts                 plugin lifecycle: views, commands, events
+  settings.ts             settings shape, defaults and safe merging
+  constants.ts, types.ts
+  core/
+    vault-model.ts        the index: folders, notes, tags, links, backlinks
+    link-graph.ts         nodes and edges, local graphs, ghosts, filters
+    filters.ts            search, sorting, grouping
+    excerpts.ts           lazy note previews
+  ui/
+    explorer-*.ts         the content browser
+    graph-*.ts            the graph view, renderer and force simulation
+    settings-tab.ts, file-actions.ts, view-actions.ts, collections.ts
+  utils/                  formatting, icons, folder palette
 ```
 
-## API Documentation
+To test a build by hand, copy `main.js`, `manifest.json` and `styles.css` into
+`<Vault>/.obsidian/plugins/cerebrum/` and reload Obsidian.
 
-See https://docs.obsidian.md
+## Licence
+
+Zero-clause BSD. See [LICENSE](LICENSE).

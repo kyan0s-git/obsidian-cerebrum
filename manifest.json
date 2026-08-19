@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "cerebrum",
+	"name": "Cerebrum",
 	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"minAppVersion": "1.7.2",
+	"description": "Browse a second brain as adaptive spaces of cards instead of a file tree, with a graph that mirrors every link on a page.",
+	"author": "kyan0s",
+	"authorUrl": "https://github.com/kyan0s-git",
 	"isDesktopOnly": false
 }

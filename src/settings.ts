@@ -1,38 +1,79 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
-import MyPlugin from './main';
+import type { GroupKey, SortKey, ViewMode } from './types';
 
-export interface MyPluginSettings {
-	mySetting: string;
+export interface CerebrumSettings {
+	/** Explorer */
+	viewMode: ViewMode;
+	sortKey: SortKey;
+	sortDescending: boolean;
+	groupKey: GroupKey;
+	showExcerpts: boolean;
+	showAttachments: boolean;
+	showSubfolderContents: boolean;
+	recentDays: number;
+	/** Folder paths hidden from every view, one per line. */
+	excludedFolders: string[];
+
+	/** Graph */
+	graphIncludeAttachments: boolean;
+	graphIncludeUnresolved: boolean;
+	graphIncludeOrphans: boolean;
+	graphShowArrows: boolean;
+	graphShowLabels: boolean;
+	graphLocalDepth: number;
+	graphLinkDistance: number;
+	graphRepelStrength: number;
+	graphCenterStrength: number;
+	graphMaxNodes: number;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default',
+export const DEFAULT_SETTINGS: CerebrumSettings = {
+	viewMode: 'cards',
+	sortKey: 'modified',
+	sortDescending: true,
+	groupKey: 'none',
+	showExcerpts: true,
+	showAttachments: false,
+	showSubfolderContents: false,
+	recentDays: 14,
+	excludedFolders: [],
+
+	graphIncludeAttachments: false,
+	graphIncludeUnresolved: true,
+	graphIncludeOrphans: true,
+	graphShowArrows: true,
+	graphShowLabels: true,
+	graphLocalDepth: 1,
+	graphLinkDistance: 90,
+	graphRepelStrength: 900,
+	graphCenterStrength: 0.05,
+	graphMaxNodes: 2000,
 };
 
-export class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
+/** Merges stored data over the defaults, dropping anything unrecognised. */
+export function mergeSettings(stored: unknown): CerebrumSettings {
+	const settings: CerebrumSettings = { ...DEFAULT_SETTINGS };
+	if (stored === null || typeof stored !== 'object') {
+		return settings;
 	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Settings #1')
-			.setDesc("It's a secret")
-			.addText((text) =>
-				text
-					.setPlaceholder('Enter your secret')
-					.setValue(this.plugin.settings.mySetting)
-					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
-						await this.plugin.saveSettings();
-					}),
-			);
+	const storedRecord = stored as Record<string, unknown>;
+	const target = settings as unknown as Record<string, unknown>;
+	for (const key of Object.keys(DEFAULT_SETTINGS)) {
+		const value = storedRecord[key];
+		if (value === undefined) {
+			continue;
+		}
+		const fallback = DEFAULT_SETTINGS[key as keyof CerebrumSettings];
+		if (Array.isArray(fallback)) {
+			if (Array.isArray(value)) {
+				target[key] = value.filter(
+					(item): item is string => typeof item === 'string',
+				);
+			}
+			continue;
+		}
+		if (typeof value === typeof fallback) {
+			target[key] = value;
+		}
 	}
+	return settings;
 }

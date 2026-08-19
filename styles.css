@@ -1,8 +1,634 @@
-/*
+/* Cerebrum: content browser and link graph. */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* ---------------------------------------------------------------- explorer */
 
-If your plugin does not need CSS, delete this file.
+.cerebrum-explorer {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 0;
+	overflow: hidden;
+}
 
-*/
+.cerebrum-explorer .cerebrum-header {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3) var(--size-4-4);
+	border-bottom: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+}
+
+.cerebrum-crumbs {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--size-2-1);
+	font-size: var(--font-ui-medium);
+	color: var(--text-muted);
+}
+
+.cerebrum-crumb {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: 2px var(--size-2-2);
+	border-radius: var(--radius-s);
+	color: var(--text-normal);
+}
+
+.cerebrum-crumb.is-clickable {
+	cursor: pointer;
+	color: var(--text-muted);
+}
+
+.cerebrum-crumb.is-clickable:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-crumb-icon,
+.cerebrum-crumb-sep {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-faint);
+}
+
+.cerebrum-crumb-icon .svg-icon,
+.cerebrum-crumb-sep .svg-icon {
+	width: var(--icon-s);
+	height: var(--icon-s);
+}
+
+.cerebrum-toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+}
+
+.cerebrum-search {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 1 1 220px;
+	min-width: 180px;
+}
+
+.cerebrum-search-icon {
+	position: absolute;
+	left: var(--size-2-3);
+	display: inline-flex;
+	color: var(--text-faint);
+	pointer-events: none;
+}
+
+.cerebrum-search-icon .svg-icon {
+	width: var(--icon-s);
+	height: var(--icon-s);
+}
+
+.cerebrum-search-input {
+	width: 100%;
+	padding-left: calc(var(--size-4-6) + 2px);
+}
+
+.cerebrum-select {
+	max-width: 170px;
+}
+
+.cerebrum-mode-toggle {
+	display: inline-flex;
+	gap: 2px;
+	padding: 2px;
+	border-radius: var(--radius-m);
+	background-color: var(--background-modifier-form-field);
+}
+
+.cerebrum-toolbar .clickable-icon.is-active,
+.cerebrum-graph-toolbar .clickable-icon.is-active {
+	color: var(--text-on-accent);
+	background-color: var(--interactive-accent);
+}
+
+.cerebrum-body {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+}
+
+/* -------------------------------------------------------------------- rail */
+
+.cerebrum-rail {
+	flex: 0 0 var(--cerebrum-rail-width, 230px);
+	width: var(--cerebrum-rail-width, 230px);
+	padding: var(--size-4-3) var(--size-4-2);
+	overflow-y: auto;
+	border-right: 1px solid var(--background-modifier-border);
+	background-color: var(--background-secondary);
+}
+
+.cerebrum-rail-section + .cerebrum-rail-section {
+	margin-top: var(--size-4-4);
+}
+
+.cerebrum-rail-title {
+	padding: 0 var(--size-2-3);
+	margin-bottom: var(--size-2-2);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-faint);
+}
+
+.cerebrum-rail-item {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-1) var(--size-2-3);
+	padding-left: calc(var(--size-2-3) + var(--cerebrum-depth, 0) * 14px);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.cerebrum-rail-item:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.cerebrum-rail-item.is-active {
+	background-color: var(--background-modifier-active-hover);
+	color: var(--text-normal);
+	font-weight: var(--font-medium);
+	box-shadow: inset 2px 0 0 0 var(--cerebrum-accent, var(--interactive-accent));
+}
+
+.cerebrum-rail-icon {
+	display: inline-flex;
+	color: var(--cerebrum-accent, var(--text-faint));
+}
+
+.cerebrum-rail-icon .svg-icon {
+	width: var(--icon-s);
+	height: var(--icon-s);
+}
+
+.cerebrum-rail-label {
+	flex: 1;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.cerebrum-rail-count {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	font-variant-numeric: tabular-nums;
+}
+
+.cerebrum-rail-empty {
+	padding: var(--size-2-2) var(--size-2-3);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
+/* ----------------------------------------------------------------- content */
+
+.cerebrum-content {
+	flex: 1;
+	min-width: 0;
+	padding: var(--size-4-4);
+	overflow-y: auto;
+}
+
+.cerebrum-intro {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-4);
+}
+
+.cerebrum-intro-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: var(--radius-m);
+	background-color: var(--background-modifier-form-field);
+	color: var(--text-muted);
+}
+
+.cerebrum-intro-text {
+	flex: 1;
+	min-width: 0;
+}
+
+.cerebrum-intro-title {
+	font-size: var(--font-ui-large);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.cerebrum-intro-desc {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.cerebrum-intro-count {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	white-space: nowrap;
+}
+
+.cerebrum-folders {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-3);
+	margin-bottom: var(--size-4-4);
+}
+
+.cerebrum-folder {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-2) var(--size-2-3);
+	border: 1px solid var(--background-modifier-border);
+	border-left: 3px solid var(--cerebrum-accent, var(--interactive-accent));
+	border-radius: var(--radius-m);
+	background-color: var(--background-secondary);
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+.cerebrum-folder:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-folder-icon {
+	display: inline-flex;
+	color: var(--cerebrum-accent, var(--text-muted));
+}
+
+.cerebrum-folder-count {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
+.cerebrum-group {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	margin: var(--size-4-3) 0 var(--size-2-3);
+}
+
+.cerebrum-group-label {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+}
+
+.cerebrum-group-count {
+	padding: 0 var(--size-2-2);
+	border-radius: var(--radius-s);
+	background-color: var(--background-modifier-form-field);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
+.cerebrum-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	gap: var(--size-4-2);
+}
+
+.cerebrum-rows {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.cerebrum-card,
+.cerebrum-row {
+	position: relative;
+	padding: var(--size-4-2) var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-primary);
+	cursor: pointer;
+	transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.cerebrum-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	min-height: 130px;
+	border-top: 3px solid var(--cerebrum-accent, var(--interactive-accent));
+}
+
+.cerebrum-row {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	gap: var(--size-2-2);
+	border-left: 3px solid var(--cerebrum-accent, var(--interactive-accent));
+}
+
+.cerebrum-card:hover,
+.cerebrum-row:hover {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.cerebrum-card-head {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	min-width: 0;
+}
+
+.cerebrum-card-icon {
+	display: inline-flex;
+	color: var(--cerebrum-accent, var(--text-muted));
+}
+
+.cerebrum-card-icon .svg-icon {
+	width: var(--icon-s);
+	height: var(--icon-s);
+}
+
+.cerebrum-card-title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	font-weight: var(--font-medium);
+	color: var(--text-normal);
+}
+
+.cerebrum-card-time {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	white-space: nowrap;
+}
+
+.cerebrum-card-path {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.cerebrum-row .cerebrum-card-path {
+	grid-column: 1;
+}
+
+.cerebrum-card-excerpt {
+	flex: 1;
+	font-size: var(--font-ui-smaller);
+	line-height: 1.45;
+	color: var(--text-muted);
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.cerebrum-card-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-2-2);
+}
+
+.cerebrum-row .cerebrum-card-footer {
+	grid-column: 2;
+	grid-row: 1 / span 2;
+}
+
+.cerebrum-card-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-1);
+	min-width: 0;
+	overflow: hidden;
+}
+
+.cerebrum-tag {
+	padding: 1px var(--size-2-2);
+	border-radius: var(--radius-s);
+	background-color: var(--background-modifier-form-field);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+.cerebrum-tag:hover {
+	color: var(--text-on-accent);
+	background-color: var(--interactive-accent);
+}
+
+.cerebrum-card-links {
+	display: flex;
+	gap: var(--size-2-2);
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	font-variant-numeric: tabular-nums;
+}
+
+.cerebrum-link-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.cerebrum-link-icon .svg-icon {
+	width: var(--icon-xs);
+	height: var(--icon-xs);
+}
+
+.cerebrum-card-sources {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-1);
+	grid-column: 1;
+}
+
+.cerebrum-source {
+	padding: 1px var(--size-2-2);
+	border-radius: var(--radius-s);
+	background-color: var(--background-modifier-form-field);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.cerebrum-source:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-row.is-missing {
+	border-left-color: var(--text-faint);
+	border-style: dashed;
+}
+
+.cerebrum-more {
+	display: block;
+	width: 100%;
+	margin-top: var(--size-4-3);
+}
+
+.cerebrum-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-4-8) var(--size-4-4);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.cerebrum-empty-icon {
+	color: var(--text-faint);
+}
+
+.cerebrum-empty-icon .svg-icon {
+	width: var(--icon-l);
+	height: var(--icon-l);
+}
+
+.cerebrum-empty-title {
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.cerebrum-empty-desc {
+	font-size: var(--font-ui-smaller);
+	max-width: 380px;
+}
+
+/* ------------------------------------------------------------------- graph */
+
+.cerebrum-graph {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 0;
+	overflow: hidden;
+}
+
+.cerebrum-graph-toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+	padding: var(--size-2-3) var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cerebrum-depth {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.cerebrum-graph-stage {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+}
+
+.cerebrum-graph-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+	touch-action: none;
+	cursor: grab;
+}
+
+.cerebrum-graph-canvas.is-hovering-node {
+	cursor: pointer;
+}
+
+.cerebrum-graph-legend {
+	position: absolute;
+	top: var(--size-4-2);
+	right: var(--size-4-2);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	max-width: 220px;
+	padding: var(--size-2-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-secondary);
+	opacity: 0.92;
+}
+
+.cerebrum-legend-item {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: 1px var(--size-2-2);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.cerebrum-legend-item:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.cerebrum-legend-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: var(--cerebrum-accent, var(--text-muted));
+}
+
+.cerebrum-legend-label {
+	flex: 1;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.cerebrum-legend-count {
+	color: var(--text-faint);
+	font-variant-numeric: tabular-nums;
+}
+
+.cerebrum-graph-status {
+	padding: var(--size-2-2) var(--size-4-3);
+	border-top: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
+/* ------------------------------------------------------------------ mobile */
+
+.is-mobile .cerebrum-rail {
+	flex-basis: 160px;
+	width: 160px;
+}
+
+.is-mobile .cerebrum-cards {
+	grid-template-columns: 1fr;
+}
+
+.is-mobile .cerebrum-graph-legend {
+	display: none;
+}

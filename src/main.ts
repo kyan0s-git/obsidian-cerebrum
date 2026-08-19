@@ -1,114 +1,234 @@
 import {
-	Editor,
-	MarkdownView,
-	MarkdownFileInfo,
-	Modal,
-	Notice,
+	Menu,
 	Plugin,
+	TAbstractFile,
+	TFile,
+	TFolder,
+	debounce,
 } from 'obsidian';
 import {
-	DEFAULT_SETTINGS,
-	MyPluginSettings,
-	SampleSettingTab,
-} from './settings';
+	EXPLORER_ICON,
+	EXPLORER_VIEW_TYPE,
+	GRAPH_ICON,
+	GRAPH_VIEW_TYPE,
+	INDEX_DEBOUNCE_MS,
+} from './constants';
+import { ExcerptStore } from './core/excerpts';
+import { VaultModel } from './core/vault-model';
+import { CerebrumSettings, mergeSettings } from './settings';
+import { ExplorerView } from './ui/explorer-view';
+import { GraphView } from './ui/graph-view';
+import { CerebrumSettingTab } from './ui/settings-tab';
+import { openExplorer, openGraph } from './ui/view-actions';
 
-// Remember to rename these classes and interfaces!
+export default class CerebrumPlugin extends Plugin {
+	settings!: CerebrumSettings;
+	model!: VaultModel;
+	excerpts!: ExcerptStore;
 
-export default class MyPlugin extends Plugin {
-	settings!: MyPluginSettings;
+	private reindex = debounce(() => {
+		this.model.rebuild();
+	}, INDEX_DEBOUNCE_MS, true);
 
-	async onload() {
-		await this.loadSettings();
+	async onload(): Promise<void> {
+		this.settings = mergeSettings(await this.loadData());
+		this.model = new VaultModel(this.app, () => this.settings);
+		this.excerpts = new ExcerptStore(this.app);
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			},
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (
-				editor: Editor,
-				_ctx: MarkdownView | MarkdownFileInfo,
-			) => {
-				editor.replaceSelection('Sample editor command');
-			},
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView =
-					this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			},
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(activeDocument, 'click', (_evt: MouseEvent) => {
-			new Notice('Click');
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(
-			window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000),
+		this.registerView(
+			EXPLORER_VIEW_TYPE,
+			(leaf) =>
+				new ExplorerView(leaf, {
+					model: this.model,
+					excerpts: this.excerpts,
+					settings: this.settings,
+					saveSettings: () => this.saveSettings(),
+				}),
 		);
+		this.registerView(
+			GRAPH_VIEW_TYPE,
+			(leaf) =>
+				new GraphView(leaf, {
+					model: this.model,
+					settings: this.settings,
+					saveSettings: () => this.saveSettings(),
+				}),
+		);
+
+		this.addRibbonIcon(EXPLORER_ICON, 'Browse the vault', () => {
+			void openExplorer(this.app);
+		});
+		this.addRibbonIcon(GRAPH_ICON, 'Open the link graph', () => {
+			void openGraph(this.app);
+		});
+
+		this.registerCommands();
+		this.registerVaultEvents();
+		this.registerMenus();
+
+		this.registerHoverLinkSource(EXPLORER_VIEW_TYPE, {
+			display: 'Cerebrum',
+			defaultMod: true,
+		});
+
+		this.addSettingTab(new CerebrumSettingTab(this.app, this));
+
+		// The metadata cache is not ready during onload, so wait for the layout.
+		this.app.workspace.onLayoutReady(() => {
+			this.model.rebuild();
+		});
 	}
 
-	onunload() {}
-
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<MyPluginSettings>,
-		);
-	}
-
-	async saveSettings() {
+	async saveSettings(rebuildIndex = false): Promise<void> {
 		await this.saveData(this.settings);
+		if (rebuildIndex) {
+			this.excerpts.clear();
+			this.model.rebuild();
+		} else {
+			this.model.notify();
+		}
 	}
-}
 
-class SampleModal extends Modal {
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
+	private registerCommands(): void {
+		this.addCommand({
+			id: 'open-explorer',
+			name: 'Browse the vault',
+			callback: () => {
+				void openExplorer(this.app);
+			},
+		});
+		this.addCommand({
+			id: 'open-graph',
+			name: 'Open the link graph',
+			callback: () => {
+				void openGraph(this.app);
+			},
+		});
+		this.addCommand({
+			id: 'open-local-graph',
+			name: 'Show the active note in the link graph',
+			checkCallback: (checking: boolean) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file) {
+					return false;
+				}
+				if (!checking) {
+					void openGraph(this.app, { focusPath: file.path, query: '' });
+				}
+				return true;
+			},
+		});
+		this.addCommand({
+			id: 'reveal-active-note',
+			name: 'Show the space holding the active note',
+			checkCallback: (checking: boolean) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file) {
+					return false;
+				}
+				if (!checking) {
+					const folder = file.parent?.isRoot() ? '' : (file.parent?.path ?? '');
+					void openExplorer(this.app, {
+						selectionKind: 'folder',
+						selectionValue: folder,
+						query: '',
+					});
+				}
+				return true;
+			},
+		});
+		this.addCommand({
+			id: 'rebuild-index',
+			name: 'Rebuild the index',
+			callback: () => {
+				this.excerpts.clear();
+				this.model.rebuild();
+			},
+		});
 	}
 
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
+	private registerVaultEvents(): void {
+		const onChange = (file: TAbstractFile): void => {
+			if (file instanceof TFile) {
+				this.excerpts.forget(file.path);
+			}
+			this.reindex();
+		};
+
+		this.registerEvent(this.app.vault.on('create', onChange));
+		this.registerEvent(this.app.vault.on('delete', onChange));
+		this.registerEvent(this.app.vault.on('modify', onChange));
+		this.registerEvent(
+			this.app.vault.on('rename', (file, oldPath) => {
+				this.excerpts.forget(oldPath);
+				onChange(file);
+			}),
+		);
+		this.registerEvent(
+			this.app.metadataCache.on('resolved', () => {
+				this.reindex();
+			}),
+		);
+		this.registerEvent(
+			this.app.workspace.on('file-open', (file) => {
+				this.forEachGraphView((view) => {
+					view.onActiveFileChanged(file);
+				});
+			}),
+		);
+		this.registerEvent(
+			this.app.workspace.on('css-change', () => {
+				this.forEachGraphView((view) => {
+					view.refreshTheme();
+				});
+			}),
+		);
+	}
+
+	private registerMenus(): void {
+		this.registerEvent(
+			this.app.workspace.on(
+				'file-menu',
+				(menu: Menu, file: TAbstractFile, source: string) => {
+					if (file instanceof TFile) {
+						menu.addItem((item) =>
+							item
+								.setTitle('Show links in graph')
+								.setIcon(GRAPH_ICON)
+								.onClick(() => {
+									void openGraph(this.app, {
+										focusPath: file.path,
+										query: '',
+									});
+								}),
+						);
+					}
+					if (file instanceof TFolder && source !== EXPLORER_VIEW_TYPE) {
+						menu.addItem((item) =>
+							item
+								.setTitle('Browse this folder')
+								.setIcon(EXPLORER_ICON)
+								.onClick(() => {
+									void openExplorer(this.app, {
+										selectionKind: 'folder',
+										selectionValue: file.isRoot() ? '' : file.path,
+										query: '',
+									});
+								}),
+						);
+					}
+				},
+			),
+		);
+	}
+
+	/** Views are looked up on demand so no references outlive their leaf. */
+	private forEachGraphView(callback: (view: GraphView) => void): void {
+		for (const leaf of this.app.workspace.getLeavesOfType(GRAPH_VIEW_TYPE)) {
+			const view = leaf.view;
+			if (view instanceof GraphView) {
+				callback(view);
+			}
+		}
 	}
 }

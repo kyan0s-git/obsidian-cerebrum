@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "cerebrum",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Adaptive content browser and link graph for an Obsidian second brain.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
