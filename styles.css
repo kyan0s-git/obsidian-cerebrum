@@ -632,3 +632,91 @@
 .is-mobile .cerebrum-graph-legend {
 	display: none;
 }
+
+/* ------------------------------------------------------------------ facets */
+
+.cerebrum-facet-chips {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+}
+
+.cerebrum-facet-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	padding: 1px var(--size-2-2);
+	border: 1px solid var(--cerebrum-accent, var(--background-modifier-border));
+	border-radius: var(--radius-s);
+	background-color: var(--background-secondary);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+.cerebrum-facet-chip:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-facet-name {
+	color: var(--text-faint);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	font-size: var(--font-ui-smaller);
+}
+
+.cerebrum-facet-value {
+	font-weight: var(--font-medium);
+	color: var(--cerebrum-accent, var(--text-normal));
+}
+
+.cerebrum-facet-remove {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+
+.cerebrum-facet-remove .svg-icon {
+	width: var(--icon-xs);
+	height: var(--icon-xs);
+}
+
+.cerebrum-facet-chip:hover .cerebrum-facet-remove {
+	color: var(--text-normal);
+}
+
+.cerebrum-facet-clear {
+	padding: 1px var(--size-2-2);
+	font-size: var(--font-ui-smaller);
+	background: none;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	box-shadow: none;
+}
+
+.cerebrum-facet-clear:hover {
+	color: var(--text-normal);
+	text-decoration: underline;
+}
+
+.cerebrum-card-facet {
+	display: inline-block;
+	margin-right: var(--size-2-1);
+	padding: 0 var(--size-2-2);
+	border-left: 2px solid var(--cerebrum-accent, var(--text-faint));
+	border-radius: var(--radius-s);
+	background-color: var(--background-modifier-form-field);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.cerebrum-card-facet:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-graph-toolbar .cerebrum-facet-chip {
+	background-color: var(--background-primary);
+}

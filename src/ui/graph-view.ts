@@ -54,6 +54,7 @@ export class GraphView extends ItemView {
 	private theme: ThemeColors | null = null;
 
 	private query = '';
+	private facetFilters: Record<string, string> = {};
 	private focusPath: string | null = null;
 	private followActive = false;
 	private hovered: GraphNode | null = null;
@@ -85,6 +86,7 @@ export class GraphView extends ItemView {
 	getState(): Record<string, unknown> {
 		return {
 			query: this.query,
+			facets: { ...this.facetFilters },
 			focusPath: this.focusPath,
 			followActive: this.followActive,
 		};
@@ -105,6 +107,16 @@ export class GraphView extends ItemView {
 		}
 		if (typeof record.followActive === 'boolean') {
 			this.followActive = record.followActive;
+		}
+		if (record.facets !== null && typeof record.facets === 'object') {
+			this.facetFilters = {};
+			for (const [name, value] of Object.entries(
+				record.facets as Record<string, unknown>,
+			)) {
+				if (typeof value === 'string') {
+					this.facetFilters[name] = value;
+				}
+			}
 		}
 		this.rebuild(true);
 		await super.setState(state, result);
@@ -177,6 +189,8 @@ export class GraphView extends ItemView {
 			focusPath: this.focusPath,
 			depth: settings.graphLocalDepth,
 			query: this.query,
+			colorBy: settings.graphColorBy,
+			facets: this.facetFilters,
 		};
 	}
 
@@ -425,12 +439,18 @@ export class GraphView extends ItemView {
 	private activate(node: GraphNode, evt: PointerEvent): void {
 		if (node.kind === 'ghost') {
 			const source = this.data.edges.find((edge) => edge.target === node.id);
-			openLink(this.app, node.label, source?.source ?? '', evt);
+			openLink(
+				this.app,
+				node.label,
+				source?.source ?? '',
+				this.deps.settings.openInNewTab,
+				evt,
+			);
 			return;
 		}
 		const file = this.app.vault.getFileByPath(node.path);
 		if (file) {
-			openFile(this.app, file, evt);
+			openFile(this.app, file, this.deps.settings.openInNewTab, evt);
 		}
 	}
 
@@ -450,6 +470,41 @@ export class GraphView extends ItemView {
 			this.query = input.value;
 			this.scheduleRebuild();
 		});
+
+		const facetNames = this.deps.model.getFacetNames();
+		if (facetNames.length > 0) {
+			const colorGroup = toolbar.createDiv({ cls: 'cerebrum-depth' });
+			colorGroup.createSpan({ text: 'Colour' });
+			const select = colorGroup.createEl('select', { cls: 'dropdown' });
+			select.createEl('option', { value: '', text: 'Folder' });
+			for (const name of facetNames) {
+				select.createEl('option', {
+					value: name,
+					text: name.charAt(0).toUpperCase() + name.slice(1),
+				});
+			}
+			select.value = this.deps.settings.graphColorBy;
+			select.addEventListener('change', () => {
+				this.deps.settings.graphColorBy = select.value;
+				void this.deps.saveSettings();
+				this.renderLegend();
+				this.rebuild();
+			});
+		}
+
+		for (const [name, value] of Object.entries(this.facetFilters)) {
+			const chip = toolbar.createDiv({ cls: 'cerebrum-facet-chip' });
+			chip.setCssProps({ '--cerebrum-accent': colorFor(value) });
+			chip.createSpan({ cls: 'cerebrum-facet-name', text: name });
+			chip.createSpan({ cls: 'cerebrum-facet-value', text: value });
+			setIcon(chip.createSpan({ cls: 'cerebrum-facet-remove' }), 'x');
+			setTooltip(chip, `Remove the ${name} filter`);
+			chip.addEventListener('click', () => {
+				delete this.facetFilters[name];
+				this.renderToolbar();
+				this.rebuild(true);
+			});
+		}
 
 		this.toggleButton(toolbar, 'focus', 'Follow the active note', this.followActive, () => {
 			this.followActive = !this.followActive;
@@ -600,27 +655,35 @@ export class GraphView extends ItemView {
 
 	private renderLegend(): void {
 		this.legendEl.empty();
+		const colorBy = this.deps.settings.graphColorBy;
 		const counts = new Map<string, number>();
 		for (const node of this.data.nodes) {
 			if (node.kind !== 'note') {
 				continue;
 			}
-			counts.set(node.space, (counts.get(node.space) ?? 0) + 1);
+			counts.set(node.colorKey, (counts.get(node.colorKey) ?? 0) + 1);
 		}
-		const spaces = Array.from(counts.entries())
+		const groups = Array.from(counts.entries())
 			.sort((a, b) => b[1] - a[1])
 			.slice(0, 10);
-		for (const [space, count] of spaces) {
+		const emptyLabel = colorBy === '' ? 'Vault root' : `No ${colorBy}`;
+		for (const [key, count] of groups) {
 			const item = this.legendEl.createDiv({ cls: 'cerebrum-legend-item' });
-			item.setCssProps({ '--cerebrum-accent': colorFor(space) });
+			item.setCssProps({ '--cerebrum-accent': colorFor(key) });
 			item.createSpan({ cls: 'cerebrum-legend-dot' });
 			item.createSpan({
 				cls: 'cerebrum-legend-label',
-				text: space === '' ? 'Vault root' : space,
+				text: key === '' ? emptyLabel : key,
 			});
 			item.createSpan({ cls: 'cerebrum-legend-count', text: String(count) });
 			item.addEventListener('click', () => {
-				this.query = this.query === space ? '' : space;
+				if (colorBy === '') {
+					this.query = this.query === key ? '' : key;
+				} else if (this.facetFilters[colorBy] === key) {
+					delete this.facetFilters[colorBy];
+				} else if (key !== '') {
+					this.facetFilters[colorBy] = key;
+				}
 				this.renderToolbar();
 				this.rebuild(true);
 			});

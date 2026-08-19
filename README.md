@@ -20,6 +20,10 @@ Open it from the ribbon (**Browse the vault**) or the command palette.
   layout: all notes, recently edited, link hubs (what the vault points at most),
   orphans (nothing in, nothing out), and missing pages (links written for notes
   that do not exist yet, with the pages asking for them).
+- **Levels** — name your folder levels once, as `raw/<year>/<subject>/<unit>`,
+  and each becomes a filter of its own: one click for every physics note of
+  2026, across `raw/`, `wiki/` and anywhere else it lives. Levels narrow each
+  other as you pick them, group the results, and label the cards.
 - **Tags** — every tag in the vault with its note count, as a one-click filter.
 - **Cards** show the title, the folder, an excerpt pulled from the note itself,
   tags, the last edit, and how many links point in and out. A list layout is a
@@ -40,7 +44,8 @@ table, so it shows what is actually written:
 - **Links to pages that do not exist yet** become hollow ghost nodes — clicking
   one creates and opens the note.
 - **Node size** follows how many links touch a page; **node colour** follows its
-  top level folder, with a legend that updates as the vault changes.
+  top level folder or any level you configured, with a legend that filters the
+  graph as you click it.
 - **Local graph mode** follows the active note at a depth you choose, and the
   filter narrows the graph to matching paths, titles or tags.
 - Drag to pin, scroll to zoom, double click to re-centre. The Barnes-Hut force

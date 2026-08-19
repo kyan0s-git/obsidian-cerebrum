@@ -5,7 +5,7 @@ import type { NoteEntry, UnresolvedEntry } from '../types';
 import { formatCount, formatFolder, formatRelativeTime } from '../utils/format';
 import { iconForExtension } from '../utils/icons';
 import { colorFor } from '../utils/palette';
-import { resolveCollection } from './collections';
+import { applyFacets, resolveCollection } from './collections';
 import { openFile, openLink, showFileMenu, wireHoverPreview } from './file-actions';
 import type { ExplorerContext } from './explorer-view';
 
@@ -45,7 +45,8 @@ export function renderContent(
 		renderFolders(container, ctx, collection.folders);
 	}
 
-	const filtered = searchNotes(collection.notes, ctx.state.query);
+	const faceted = applyFacets(collection.notes, ctx.state.facets);
+	const filtered = searchNotes(faceted, ctx.state.query);
 	const sorted = sortNotes(
 		filtered,
 		ctx.settings.sortKey,
@@ -140,7 +141,7 @@ function renderNote(
 		text: formatRelativeTime(note.modified),
 	});
 
-	card.createDiv({ cls: 'cerebrum-card-path', text: formatFolder(note.folder) });
+	renderCardPath(card, ctx, note);
 
 	if (ctx.settings.showExcerpts && ctx.settings.viewMode === 'cards') {
 		renderExcerpt(card, ctx, note, file);
@@ -175,11 +176,11 @@ function renderNote(
 		return;
 	}
 	card.addEventListener('click', (evt) => {
-		openFile(ctx.view.app, file, evt);
+		openFile(ctx.view.app, file, ctx.settings.openInNewTab, evt);
 	});
 	card.addEventListener('auxclick', (evt) => {
 		if (evt.button === 1) {
-			openFile(ctx.view.app, file, evt);
+			openFile(ctx.view.app, file, ctx.settings.openInNewTab, evt);
 		}
 	});
 	card.addEventListener('contextmenu', (evt) => {
@@ -193,6 +194,42 @@ function renderNote(
 		EXPLORER_VIEW_TYPE,
 		ctx.view,
 	);
+}
+
+/**
+ * Under the title: the note's facet values when patterns are configured, since
+ * "2026 / physics / unit 3" says more than the folder path it came from.
+ */
+function renderCardPath(
+	card: HTMLElement,
+	ctx: ExplorerContext,
+	note: NoteEntry,
+): void {
+	const names = ctx.model.getFacetNames();
+	const values = names
+		.map((name) => ({ name, value: note.facets[name] }))
+		.filter((entry): entry is { name: string; value: string } =>
+			entry.value !== undefined,
+		);
+	if (values.length === 0) {
+		card.createDiv({ cls: 'cerebrum-card-path', text: formatFolder(note.folder) });
+		return;
+	}
+	const row = card.createDiv({ cls: 'cerebrum-card-path' });
+	for (const entry of values) {
+		const chip = row.createSpan({
+			cls: 'cerebrum-card-facet',
+			text: entry.value,
+		});
+		chip.setCssProps({
+			'--cerebrum-accent': colorFor(`${entry.name}:${entry.value}`),
+		});
+		setTooltip(chip, `Filter by ${entry.name}`);
+		chip.addEventListener('click', (evt) => {
+			evt.stopPropagation();
+			ctx.setFacet(entry.name, entry.value);
+		});
+	}
 }
 
 function renderExcerpt(
@@ -269,13 +306,19 @@ function renderUnresolved(
 				evt.stopPropagation();
 				const file = ctx.view.app.vault.getFileByPath(source);
 				if (file) {
-					openFile(ctx.view.app, file, evt);
+					openFile(ctx.view.app, file, ctx.settings.openInNewTab, evt);
 				}
 			});
 		}
 		row.addEventListener('click', (evt) => {
 			const source = entry.sources[0] ?? '';
-			openLink(ctx.view.app, entry.name, source, evt);
+			openLink(
+				ctx.view.app,
+				entry.name,
+				source,
+				ctx.settings.openInNewTab,
+				evt,
+			);
 		});
 	}
 	if (filtered.length > ctx.state.visible) {

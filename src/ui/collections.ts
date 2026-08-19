@@ -7,6 +7,7 @@ import type {
 	UnresolvedEntry,
 } from '../types';
 import type { VaultModel } from '../core/vault-model';
+import { matchesFilters } from '../core/facets';
 import { formatFolder } from '../utils/format';
 
 export interface SmartList {
@@ -69,6 +70,17 @@ function visible(notes: NoteEntry[], settings: CerebrumSettings): NoteEntry[] {
 	return settings.showAttachments
 		? notes
 		: notes.filter((note) => note.isNote);
+}
+
+/** Keeps only the notes matching every active facet filter. */
+export function applyFacets(
+	notes: NoteEntry[],
+	filters: Record<string, string>,
+): NoteEntry[] {
+	if (Object.keys(filters).length === 0) {
+		return notes;
+	}
+	return notes.filter((note) => matchesFilters(note.facets, filters));
 }
 
 /** Turns the current selection into everything the content area has to draw. */

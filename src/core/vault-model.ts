@@ -7,6 +7,15 @@ import {
 	getLinkpath,
 } from 'obsidian';
 import { NOTE_EXTENSIONS } from '../constants';
+import {
+	FacetCount,
+	FacetRule,
+	FacetValues,
+	countValues,
+	facetNames,
+	facetsForNote,
+	parseRules,
+} from './facets';
 import type { CerebrumSettings } from '../settings';
 import type {
 	FolderEntry,
@@ -28,6 +37,8 @@ export class VaultModel {
 	private notes = new Map<string, NoteEntry>();
 	private folders = new Map<string, FolderEntry>();
 	private tagCounts = new Map<string, number>();
+	private rules: FacetRule[] = [];
+	private facetOrder: string[] = [];
 	private unresolved = new Map<string, UnresolvedEntry>();
 	private listeners = new Set<() => void>();
 	private built = false;
@@ -50,6 +61,8 @@ export class VaultModel {
 		this.tagCounts.clear();
 		this.unresolved.clear();
 
+		this.rules = parseRules(this.settings().facetPatterns);
+		this.facetOrder = facetNames(this.rules);
 		this.indexFolders();
 		this.indexFiles();
 		this.indexLinks();
@@ -134,6 +147,23 @@ export class VaultModel {
 		return Array.from(this.tagCounts.entries())
 			.map(([tag, count]) => ({ tag, count }))
 			.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+	}
+
+	/** Facet names in the order their patterns declare them. */
+	getFacetNames(): string[] {
+		return [...this.facetOrder];
+	}
+
+	/**
+	 * Values of one facet across the given notes, narrowed by the other active
+	 * filters so drilling into a year leaves only the subjects taught that year.
+	 */
+	getFacetValues(
+		notes: NoteEntry[],
+		name: string,
+		filters: FacetValues,
+	): FacetCount[] {
+		return countValues(notes, name, filters);
 	}
 
 	/** Link targets that do not exist yet, most referenced first. */
@@ -253,6 +283,7 @@ export class VaultModel {
 		const cache = this.app.metadataCache.getFileCache(file);
 		const folder = file.parent && !file.parent.isRoot() ? file.parent.path : '';
 		const frontmatter: Record<string, unknown> | undefined = cache?.frontmatter;
+		const folders = folder === '' ? [] : folder.split('/');
 		return {
 			path: file.path,
 			basename: file.basename,
@@ -264,6 +295,12 @@ export class VaultModel {
 				readString(frontmatter, ['description', 'summary', 'abstract']) ?? '',
 			tags: cache ? (getAllTags(cache) ?? []) : [],
 			aliases: readStringList(frontmatter, 'aliases'),
+			facets: facetsForNote(
+				folders,
+				frontmatter,
+				this.rules,
+				this.facetOrder,
+			),
 			created: file.stat.ctime,
 			modified: file.stat.mtime,
 			size: file.stat.size,

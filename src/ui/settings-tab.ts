@@ -1,4 +1,5 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { detectRules } from '../core/facets';
 import type CerebrumPlugin from '../main';
 
 export class CerebrumSettingTab extends PluginSettingTab {
@@ -19,6 +20,18 @@ export class CerebrumSettingTab extends PluginSettingTab {
 		};
 
 		new Setting(containerEl).setName('Browsing').setHeading();
+
+		new Setting(containerEl)
+			.setName('Open notes in a new tab')
+			.setDesc(
+				'Off, a click reuses the current tab. On, every click opens a tab. The modifier key always does the opposite.',
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(settings.openInNewTab).onChange((value) => {
+					settings.openInNewTab = value;
+					save();
+				}),
+			);
 
 		new Setting(containerEl)
 			.setName('Show excerpts on cards')
@@ -81,6 +94,8 @@ export class CerebrumSettingTab extends PluginSettingTab {
 						save(true);
 					}),
 			);
+
+		this.renderFacetSettings(containerEl);
 
 		new Setting(containerEl).setName('Graph').setHeading();
 
@@ -158,6 +173,58 @@ export class CerebrumSettingTab extends PluginSettingTab {
 						settings.graphMaxNodes = value;
 						save();
 					}),
+			);
+	}
+
+	/**
+	 * Patterns name the folder levels once, and every note then carries those
+	 * levels as filters that combine in any order.
+	 */
+	private renderFacetSettings(containerEl: HTMLElement): void {
+		const settings = this.plugin.settings;
+
+		new Setting(containerEl).setName('Folder levels').setHeading();
+
+		new Setting(containerEl)
+			.setName('Level patterns')
+			.setDesc(
+				'One pattern per line naming each folder level, such as raw/<year>/<subject>/<unit>. Anything nested deeper stays with the level above it, and a note can override a level in its own frontmatter.',
+			)
+			.addTextArea((area) => {
+				area
+					.setPlaceholder('raw/<year>/<subject>/<unit>')
+					.setValue(settings.facetPatterns.join('\n'))
+					.onChange((value) => {
+						settings.facetPatterns = value
+							.split('\n')
+							.map((line) => line.trim())
+							.filter((line) => line !== '');
+						void this.plugin.saveSettings(true);
+					});
+				area.inputEl.rows = 4;
+			});
+
+		new Setting(containerEl)
+			.setName('Detect levels from the vault')
+			.setDesc(
+				'Reads the folders you already have and suggests a pattern for each top level tree. Rename the levels to taste.',
+			)
+			.addButton((button) =>
+				button.setButtonText('Detect').onClick(() => {
+					const folders = this.plugin.model
+						.getAllFolders()
+						.map((folder) => folder.path)
+						.filter((path) => path !== '');
+					const detected = detectRules(folders);
+					if (detected.length === 0) {
+						new Notice('No folder levels to detect yet.');
+						return;
+					}
+					settings.facetPatterns = detected;
+					void this.plugin.saveSettings(true);
+					this.display();
+					new Notice(`Detected ${detected.length} patterns.`);
+				}),
 			);
 	}
 }

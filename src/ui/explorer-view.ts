@@ -10,6 +10,8 @@ import { renderRail } from './explorer-rail';
 
 export interface ExplorerState {
 	selection: Selection;
+	/** Active facet filters, keyed by facet name. */
+	facets: Record<string, string>;
 	query: string;
 	/** How many notes of the current result set are rendered. */
 	visible: number;
@@ -23,6 +25,9 @@ export interface ExplorerContext {
 	settings: CerebrumSettings;
 	state: ExplorerState;
 	setSelection(selection: Selection): void;
+	/** Sets a facet filter, or clears it when the value is null. */
+	setFacet(name: string, value: string | null): void;
+	clearFacets(): void;
 	setQuery(query: string): void;
 	showMore(): void;
 	refresh(): void;
@@ -47,6 +52,7 @@ export class ExplorerView extends ItemView {
 	private readonly deps: ExplorerDeps;
 	private state: ExplorerState = {
 		selection: { kind: 'smart', value: 'all' },
+		facets: {},
 		query: '',
 		visible: PAGE_SIZE,
 	};
@@ -76,6 +82,7 @@ export class ExplorerView extends ItemView {
 		return {
 			selectionKind: this.state.selection.kind,
 			selectionValue: this.state.selection.value,
+			facets: { ...this.state.facets },
 			query: this.state.query,
 		};
 	}
@@ -93,6 +100,16 @@ export class ExplorerView extends ItemView {
 		}
 		if (typeof record.query === 'string') {
 			this.state.query = record.query;
+		}
+		if (record.facets !== null && typeof record.facets === 'object') {
+			this.state.facets = {};
+			for (const [name, value] of Object.entries(
+				record.facets as Record<string, unknown>,
+			)) {
+				if (typeof value === 'string') {
+					this.state.facets[name] = value;
+				}
+			}
 		}
 		this.render();
 		await super.setState(state, result);
@@ -122,6 +139,7 @@ export class ExplorerView extends ItemView {
 	/** Points the explorer at a folder, collection or tag. */
 	reveal(selection: Selection): void {
 		this.state.selection = selection;
+		this.state.facets = {};
 		this.state.visible = PAGE_SIZE;
 		this.render();
 	}
@@ -135,6 +153,20 @@ export class ExplorerView extends ItemView {
 			state: this.state,
 			setSelection: (selection) => {
 				this.state.selection = selection;
+				this.state.visible = PAGE_SIZE;
+				this.render();
+			},
+			setFacet: (name, value) => {
+				if (value === null) {
+					delete this.state.facets[name];
+				} else {
+					this.state.facets[name] = value;
+				}
+				this.state.visible = PAGE_SIZE;
+				this.render();
+			},
+			clearFacets: () => {
+				this.state.facets = {};
 				this.state.visible = PAGE_SIZE;
 				this.render();
 			},

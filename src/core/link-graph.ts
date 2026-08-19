@@ -1,4 +1,5 @@
 import type { LinkKind, NoteEntry } from '../types';
+import { matchesFilters } from './facets';
 import type { VaultModel } from './vault-model';
 
 export type GraphNodeKind = 'note' | 'attachment' | 'ghost';
@@ -9,8 +10,10 @@ export interface GraphNode {
 	kind: GraphNodeKind;
 	/** Vault path for real files, empty for unresolved ghosts. */
 	path: string;
-	/** Top level folder, used for colouring. */
+	/** Top level folder, used for grouping in the legend. */
 	space: string;
+	/** What the node is coloured by: a facet value, or the top level folder. */
+	colorKey: string;
 	inDegree: number;
 	outDegree: number;
 	x: number;
@@ -47,6 +50,10 @@ export interface GraphOptions {
 	depth: number;
 	/** Case insensitive filter on path, title and tags. */
 	query: string;
+	/** Facet whose value colours the nodes, or '' for the top level folder. */
+	colorBy: string;
+	/** Facet filters the graph is restricted to. */
+	facets: Record<string, string>;
 }
 
 /** Prefix that keeps ghost node ids from colliding with vault paths. */
@@ -93,6 +100,7 @@ export function buildGraph(
 			note.isNote ? 'note' : 'attachment',
 			note.path,
 			note.space,
+			colorKeyFor(note, options.colorBy),
 		);
 		nodes.set(node.id, node);
 		return node;
@@ -108,7 +116,7 @@ export function buildGraph(
 			truncated += 1;
 			return undefined;
 		}
-		const node = makeNode(id, name, 'ghost', '', '');
+		const node = makeNode(id, name, 'ghost', '', '', '');
 		nodes.set(id, node);
 		return node;
 	};
@@ -176,12 +184,21 @@ export function buildGraph(
 	};
 }
 
+/** Colour key: the chosen facet's value, falling back to the top level folder. */
+function colorKeyFor(note: NoteEntry, colorBy: string): string {
+	if (colorBy === '') {
+		return note.space;
+	}
+	return note.facets[colorBy] ?? '';
+}
+
 function makeNode(
 	id: string,
 	label: string,
 	kind: GraphNodeKind,
 	path: string,
 	space: string,
+	colorKey: string,
 ): GraphNode {
 	return {
 		id,
@@ -189,6 +206,7 @@ function makeNode(
 		kind,
 		path,
 		space,
+		colorKey,
 		inDegree: 0,
 		outDegree: 0,
 		x: 0,
@@ -209,6 +227,10 @@ function resolveScope(
 	if (options.focusPath !== null) {
 		const focus = included.get(options.focusPath);
 		scope = focus ? neighbourhood(included, focus, options.depth) : [];
+	}
+
+	if (Object.keys(options.facets).length > 0) {
+		scope = scope.filter((note) => matchesFilters(note.facets, options.facets));
 	}
 
 	const query = options.query.trim().toLowerCase();

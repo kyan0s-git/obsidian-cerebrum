@@ -11,6 +11,7 @@ each one is.
 
 | Setting | Default | Where | Effect |
 | --- | --- | --- | --- |
+| Open notes in a new tab | off | Settings | Off, a click reuses the current tab. On, every click opens a new tab. Cmd/Ctrl always does the opposite, middle click always opens a tab, and Cmd/Ctrl+Alt always splits |
 | Show excerpts on cards | on | Settings | Reads the first lines of a note for the card preview. Turning it off stops Cerebrum reading note bodies at all |
 | Include notes from subfolders | off | Settings | Off, a space shows only what sits directly in it. On, it shows everything nested below |
 | Show attachments | off | Settings | Includes images, audio, PDFs and other non-note files in the browser. Folder counts stay note-only either way |
@@ -24,6 +25,18 @@ Hidden folders are matched by path prefix, so `archive` hides `archive` and
 `archive/2019/notes.md` but not `archived-ideas`. Leading and trailing slashes
 are ignored, and blank lines are dropped.
 
+## Folder levels
+
+| Setting | Default | Where | Effect |
+| --- | --- | --- | --- |
+| Level patterns | empty | Settings | One pattern per line naming the folder levels, such as `raw/<year>/<subject>/<unit>`. Each named level becomes a filter in the rail, a grouping option, and a chip on cards |
+| Detect levels from the vault | — | Settings | Reads your folders and replaces the patterns with one suggestion per top level tree |
+
+Patterns are covered in full in the
+[user guide](user-guide.md#folder-levels), including what happens to notes that
+sit deeper or shallower than the pattern and how frontmatter overrides a level.
+Changing the patterns rebuilds the index.
+
 ## Graph
 
 | Setting | Default | Where | Effect |
@@ -35,6 +48,7 @@ are ignored, and blank lines are dropped.
 | Repel strength | 900 | Settings | How hard nodes push apart. 100–3000 |
 | Node limit | 2000 | Settings | Stops adding nodes past this count. 200–8000 |
 | Include attachments | off | Toolbar | Adds attachment nodes, coloured by file type |
+| Colour | folder | Toolbar | What node colour means: the top level folder, or one of your levels. Appears only when levels are configured |
 | Show link direction | on | Toolbar | Arrowheads on links |
 | Show labels | on | Toolbar | Note titles under nodes |
 
@@ -59,6 +73,7 @@ it. Values much above `0.2` compress the whole graph into the centre.
 
 ```json
 {
+  "openInNewTab": false,
   "viewMode": "cards",
   "sortKey": "modified",
   "sortDescending": true,
@@ -68,6 +83,7 @@ it. Values much above `0.2` compress the whole graph into the centre.
   "showSubfolderContents": false,
   "recentDays": 14,
   "excludedFolders": [],
+  "facetPatterns": [],
   "graphIncludeAttachments": false,
   "graphIncludeUnresolved": true,
   "graphIncludeOrphans": true,
@@ -77,7 +93,8 @@ it. Values much above `0.2` compress the whole graph into the centre.
   "graphLinkDistance": 90,
   "graphRepelStrength": 900,
   "graphCenterStrength": 0.05,
-  "graphMaxNodes": 2000
+  "graphMaxNodes": 2000,
+  "graphColorBy": ""
 }
 ```
 
@@ -87,6 +104,6 @@ than accepted. Deleting `data.json` resets everything.
 
 ## Which changes rebuild the index
 
-Most settings only affect what is drawn. Two change what is indexed, and rebuild
-it when you change them: **Show attachments** and **Hidden folders**. That
-rebuild also clears the excerpt cache.
+Most settings only affect what is drawn. Three change what is indexed, and
+rebuild it when you change them: **Show attachments**, **Hidden folders** and
+**Level patterns**. That rebuild also clears the excerpt cache.

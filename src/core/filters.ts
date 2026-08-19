@@ -78,6 +78,7 @@ export function groupNotes(notes: NoteEntry[], key: GroupKey): NoteGroup[] {
 		return [{ key: 'all', label: '', notes }];
 	}
 
+	const facet = key.startsWith('facet:') ? key.slice('facet:'.length) : null;
 	const groups = new Map<string, NoteGroup>();
 	const push = (groupKey: string, label: string, note: NoteEntry): void => {
 		const existing = groups.get(groupKey);
@@ -89,6 +90,11 @@ export function groupNotes(notes: NoteEntry[], key: GroupKey): NoteGroup[] {
 	};
 
 	for (const note of notes) {
+		if (facet !== null) {
+			const value = note.facets[facet];
+			push(value ?? '', value ?? `No ${facet}`, note);
+			continue;
+		}
 		switch (key) {
 			case 'folder':
 				push(note.folder, note.folder === '' ? 'Vault root' : note.folder, note);
@@ -115,6 +121,21 @@ export function groupNotes(notes: NoteEntry[], key: GroupKey): NoteGroup[] {
 	}
 
 	const ordered = Array.from(groups.values());
+	if (facet !== null) {
+		// Years read newest first; anything else alphabetically, numbers in order.
+		return ordered.sort((a, b) => {
+			if (a.key === '') {
+				return 1;
+			}
+			if (b.key === '') {
+				return -1;
+			}
+			if (YEAR_PATTERN.test(a.key) && YEAR_PATTERN.test(b.key)) {
+				return b.key.localeCompare(a.key);
+			}
+			return a.label.localeCompare(b.label, undefined, { numeric: true });
+		});
+	}
 	if (key === 'modified') {
 		return ordered.sort(
 			(a, b) => DATE_BUCKETS.indexOf(a.key) - DATE_BUCKETS.indexOf(b.key),
@@ -124,6 +145,7 @@ export function groupNotes(notes: NoteEntry[], key: GroupKey): NoteGroup[] {
 }
 
 const DATE_BUCKETS = ['today', 'yesterday', 'week', 'month', 'older'];
+const YEAR_PATTERN = /^(?:19|20)\d{2}(?:[-/–]\d{2,4})?$/;
 
 function dateBucket(timestamp: number): { key: string; label: string } {
 	const startOfToday = new Date();

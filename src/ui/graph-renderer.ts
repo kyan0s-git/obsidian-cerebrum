@@ -59,7 +59,7 @@ export function nodeColor(node: GraphNode, theme: ThemeColors): string {
 	if (node.kind === 'attachment') {
 		return colorFor(`attachment:${node.path.split('.').pop() ?? ''}`);
 	}
-	return colorFor(node.space);
+	return colorFor(node.colorKey);
 }
 
 /** Screen position of a world coordinate. */

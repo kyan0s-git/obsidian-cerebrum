@@ -1,4 +1,5 @@
 import { setIcon, setTooltip } from 'obsidian';
+import { colorFor } from '../utils/palette';
 import type { GroupKey, Selection, SortKey } from '../types';
 import type { ExplorerContext } from './explorer-view';
 import { openGraph } from './view-actions';
@@ -19,10 +20,20 @@ const GROUP_OPTIONS: { value: GroupKey; label: string }[] = [
 	{ value: 'modified', label: 'Group by date' },
 ];
 
+/** The fixed grouping choices plus one per configured facet. */
+function groupOptions(ctx: ExplorerContext): { value: GroupKey; label: string }[] {
+	const options = [...GROUP_OPTIONS];
+	for (const name of ctx.model.getFacetNames()) {
+		options.push({ value: `facet:${name}`, label: `Group by ${name}` });
+	}
+	return options;
+}
+
 export function renderHeader(container: HTMLElement, ctx: ExplorerContext): void {
 	container.empty();
 
 	renderBreadcrumbs(container.createDiv({ cls: 'cerebrum-crumbs' }), ctx);
+	renderFacetChips(container, ctx);
 
 	const toolbar = container.createDiv({ cls: 'cerebrum-toolbar' });
 	renderSearch(toolbar, ctx);
@@ -39,7 +50,7 @@ export function renderHeader(container: HTMLElement, ctx: ExplorerContext): void
 	renderDirectionToggle(toolbar, ctx);
 	renderSelect(
 		toolbar,
-		GROUP_OPTIONS,
+		groupOptions(ctx),
 		ctx.settings.groupKey,
 		'Group notes',
 		(value) => {
@@ -49,6 +60,35 @@ export function renderHeader(container: HTMLElement, ctx: ExplorerContext): void
 	);
 	renderModeToggle(toolbar, ctx);
 	renderGraphButton(toolbar, ctx);
+}
+
+/** Active facet filters, each removable, with a clear-all when several are on. */
+function renderFacetChips(container: HTMLElement, ctx: ExplorerContext): void {
+	const entries = Object.entries(ctx.state.facets);
+	if (entries.length === 0) {
+		return;
+	}
+	const row = container.createDiv({ cls: 'cerebrum-facet-chips' });
+	for (const [name, value] of entries) {
+		const chip = row.createDiv({ cls: 'cerebrum-facet-chip' });
+		chip.setCssProps({ '--cerebrum-accent': colorFor(`${name}:${value}`) });
+		chip.createSpan({ cls: 'cerebrum-facet-name', text: name });
+		chip.createSpan({ cls: 'cerebrum-facet-value', text: value });
+		setIcon(chip.createSpan({ cls: 'cerebrum-facet-remove' }), 'x');
+		setTooltip(chip, `Remove the ${name} filter`);
+		chip.addEventListener('click', () => {
+			ctx.setFacet(name, null);
+		});
+	}
+	if (entries.length > 1) {
+		const clear = row.createEl('button', {
+			cls: 'cerebrum-facet-clear',
+			text: 'Clear all',
+		});
+		clear.addEventListener('click', () => {
+			ctx.clearFacets();
+		});
+	}
 }
 
 function renderBreadcrumbs(container: HTMLElement, ctx: ExplorerContext): void {

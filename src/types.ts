@@ -24,6 +24,8 @@ export interface NoteEntry {
 	summary: string;
 	tags: string[];
 	aliases: string[];
+	/** Facet values derived from the note's path and frontmatter. */
+	facets: Record<string, string>;
 	created: number;
 	modified: number;
 	size: number;
@@ -55,7 +57,13 @@ export interface UnresolvedEntry {
 
 export type ViewMode = 'cards' | 'list';
 export type SortKey = 'modified' | 'created' | 'name' | 'links';
-export type GroupKey = 'none' | 'folder' | 'space' | 'tag' | 'modified';
+export type GroupKey =
+	| 'none'
+	| 'folder'
+	| 'space'
+	| 'tag'
+	| 'modified'
+	| `facet:${string}`;
 
 /** Built in collections that do not map to a single folder. */
 export type SmartListId = 'all' | 'recent' | 'hubs' | 'orphans' | 'unresolved';

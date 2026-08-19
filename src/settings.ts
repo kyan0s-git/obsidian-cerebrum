@@ -2,6 +2,7 @@ import type { GroupKey, SortKey, ViewMode } from './types';
 
 export interface CerebrumSettings {
 	/** Explorer */
+	openInNewTab: boolean;
 	viewMode: ViewMode;
 	sortKey: SortKey;
 	sortDescending: boolean;
@@ -12,6 +13,8 @@ export interface CerebrumSettings {
 	recentDays: number;
 	/** Folder paths hidden from every view, one per line. */
 	excludedFolders: string[];
+	/** Patterns naming the folder levels, one per line. */
+	facetPatterns: string[];
 
 	/** Graph */
 	graphIncludeAttachments: boolean;
@@ -24,9 +27,12 @@ export interface CerebrumSettings {
 	graphRepelStrength: number;
 	graphCenterStrength: number;
 	graphMaxNodes: number;
+	/** Facet name used for node colour, or an empty string for the folder. */
+	graphColorBy: string;
 }
 
 export const DEFAULT_SETTINGS: CerebrumSettings = {
+	openInNewTab: false,
 	viewMode: 'cards',
 	sortKey: 'modified',
 	sortDescending: true,
@@ -36,6 +42,7 @@ export const DEFAULT_SETTINGS: CerebrumSettings = {
 	showSubfolderContents: false,
 	recentDays: 14,
 	excludedFolders: [],
+	facetPatterns: [],
 
 	graphIncludeAttachments: false,
 	graphIncludeUnresolved: true,
@@ -47,6 +54,7 @@ export const DEFAULT_SETTINGS: CerebrumSettings = {
 	graphRepelStrength: 900,
 	graphCenterStrength: 0.05,
 	graphMaxNodes: 2000,
+	graphColorBy: '',
 };
 
 /** Merges stored data over the defaults, dropping anything unrecognised. */

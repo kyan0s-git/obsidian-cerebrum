@@ -16,13 +16,14 @@ graph drawn from what each page actually links to.
 ## The short version
 
 Open the browser from the ribbon (**Browse the vault**) to see your notes as
-cards grouped into spaces, collections and tags. Open the graph (**Open the link
-graph**) to see the link structure, including embeds, frontmatter links and
-pages you have linked but never written.
+cards grouped into levels, spaces, collections and tags. Open the graph
+(**Open the link graph**) to see the link structure, including embeds,
+frontmatter links and pages you have linked but never written.
 
 Neither view is configured with your folder layout. Folders are read from the
 vault as the views draw, so a folder added anywhere shows up immediately and
-keeps a stable colour.
+keeps a stable colour. Naming your folder levels once — `raw/<year>/<subject>/<unit>`
+— turns each of them into a filter that works across every tree at once.
 
 ## Design principles
 
@@ -31,10 +32,13 @@ will meet in the other pages.
 
 1. **No assumed layout.** No folder name is special. Spaces are whatever the
    vault contains right now, discovered on every rebuild.
-2. **Links come from the page.** The graph reads each note's own references
+2. **The path is data, not just a location.** A folder level can be named once
+   and then used as a filter in its own right, so a subject can be pulled out of
+   every tree at once instead of being walked to in a fixed order.
+3. **Links come from the page.** The graph reads each note's own references
    rather than a flattened link table, so a link, an embed and a frontmatter
    link stay distinguishable and keep their direction.
-3. **Read only.** The plugin writes nothing but its own settings file. It makes
+4. **Read only.** The plugin writes nothing but its own settings file. It makes
    no network requests and never touches a note's content.
-4. **Idle means idle.** The graph layout stops once it settles, the index
+5. **Idle means idle.** The graph layout stops once it settles, the index
    rebuilds on a debounce, and excerpts are read only for cards on screen.

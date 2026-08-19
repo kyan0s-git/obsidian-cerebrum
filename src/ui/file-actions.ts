@@ -1,9 +1,35 @@
-import { App, Component, Keymap, Menu, TFile } from 'obsidian';
+import { App, Component, Keymap, Menu, PaneType, TFile } from 'obsidian';
 
-/** Opens a file, honouring the modifier keys used on the click. */
-export function openFile(app: App, file: TFile, evt?: MouseEvent): void {
-	const mode = evt ? Keymap.isModEvent(evt) : false;
-	void app.workspace.getLeaf(mode).openFile(file);
+/**
+ * Where a plain click should open a note, and what the modifier keys do to
+ * that. The modifier always means "the other one", so whichever default you
+ * choose, the opposite stays one keypress away.
+ */
+export function resolvePaneType(
+	openInNewTab: boolean,
+	evt?: MouseEvent,
+): PaneType | boolean {
+	// Middle click means a new tab everywhere else in Obsidian; keep it that way.
+	if (evt?.button === 1) {
+		return 'tab';
+	}
+	const modified = evt ? Keymap.isModEvent(evt) : false;
+	// Cmd/Ctrl+Alt and friends ask for a specific pane: respect that as written.
+	if (typeof modified === 'string' && modified !== 'tab') {
+		return modified;
+	}
+	const wantsNewTab = modified === 'tab' || modified === true;
+	return wantsNewTab === openInNewTab ? false : 'tab';
+}
+
+/** Opens a file in the current tab or a new one, per settings and modifiers. */
+export function openFile(
+	app: App,
+	file: TFile,
+	openInNewTab: boolean,
+	evt?: MouseEvent,
+): void {
+	void app.workspace.getLeaf(resolvePaneType(openInNewTab, evt)).openFile(file);
 }
 
 /** Opens a link by its text, used for links that may not exist yet. */
@@ -11,10 +37,14 @@ export function openLink(
 	app: App,
 	linktext: string,
 	sourcePath: string,
+	openInNewTab: boolean,
 	evt?: MouseEvent,
 ): void {
-	const mode = evt ? Keymap.isModEvent(evt) : false;
-	void app.workspace.openLinkText(linktext, sourcePath, mode);
+	void app.workspace.openLinkText(
+		linktext,
+		sourcePath,
+		resolvePaneType(openInNewTab, evt),
+	);
 }
 
 /**

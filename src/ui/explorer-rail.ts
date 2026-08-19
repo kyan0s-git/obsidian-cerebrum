@@ -2,10 +2,11 @@ import { setIcon } from 'obsidian';
 import type { FolderEntry, Selection } from '../types';
 import { colorFor } from '../utils/palette';
 import { shortTag } from '../utils/format';
-import { SMART_LISTS, countForSmartList } from './collections';
+import { SMART_LISTS, countForSmartList, resolveCollection } from './collections';
 import type { ExplorerContext } from './explorer-view';
 
 const MAX_TAGS = 24;
+const MAX_FACET_VALUES = 12;
 
 /**
  * The left rail. Spaces are read from the vault every time it is drawn, so a
@@ -28,6 +29,8 @@ export function renderRail(container: HTMLElement, ctx: ExplorerContext): void {
 			},
 		});
 	}
+
+	renderFacets(container, ctx);
 
 	const spaces = section(container, 'Spaces');
 	const root = ctx.model.getFolder('');
@@ -86,6 +89,61 @@ export function renderRail(container: HTMLElement, ctx: ExplorerContext): void {
 			});
 		}
 	}
+}
+
+/**
+ * The facet lists. Each one counts its values under the *other* active filters,
+ * so picking a year leaves only the subjects taught that year, while still
+ * showing every year so you can switch in one click.
+ */
+function renderFacets(container: HTMLElement, ctx: ExplorerContext): void {
+	const names = ctx.model.getFacetNames();
+	if (names.length === 0) {
+		return;
+	}
+	// Facets narrow whatever collection is open, so they count against it.
+	const scope = resolveCollection(
+		ctx.model,
+		ctx.settings,
+		ctx.state.selection,
+	).notes;
+
+	for (const name of names) {
+		const values = ctx.model.getFacetValues(scope, name, ctx.state.facets);
+		const active = ctx.state.facets[name];
+		if (values.length === 0 && active === undefined) {
+			continue;
+		}
+		const items = section(container, capitalise(name));
+		const shown = values.slice(0, MAX_FACET_VALUES);
+		if (active !== undefined && !shown.some((v) => v.value === active)) {
+			// Keep the chosen value visible even when it falls outside the top slice.
+			shown.unshift({ value: active, count: 0 });
+		}
+		for (const entry of shown) {
+			const isActive = active === entry.value;
+			railItem(items, {
+				label: entry.value,
+				icon: isActive ? 'check' : 'chevron-right',
+				count: entry.count,
+				accent: colorFor(`${name}:${entry.value}`),
+				active: isActive,
+				onClick: () => {
+					ctx.setFacet(name, isActive ? null : entry.value);
+				},
+			});
+		}
+		if (values.length > shown.length) {
+			items.createDiv({
+				cls: 'cerebrum-rail-empty',
+				text: `and ${values.length - shown.length} more`,
+			});
+		}
+	}
+}
+
+function capitalise(text: string): string {
+	return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function section(container: HTMLElement, title: string): HTMLElement {

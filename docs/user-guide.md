@@ -33,6 +33,10 @@ middle.
 
 ### The rail
 
+**Levels** come first when you have configured them — see
+[folder levels](#folder-levels) below. Each one lists its values with counts,
+and picking a value narrows the lists below it.
+
 **Collections** are computed from the link structure, not the folder layout:
 
 | Collection | Contains |
@@ -82,8 +86,10 @@ and two counts: links in and links out.
 
 | Action on a card | Result |
 | --- | --- |
-| Click | Opens the note in the current tab |
-| Cmd/Ctrl-click, or middle click | Opens it in a new tab |
+| Click | Opens the note, in the current tab or a new one per **Open notes in a new tab** |
+| Cmd/Ctrl-click | Opens it the other way from your default |
+| Middle click | Always opens a new tab |
+| Cmd/Ctrl+Alt-click | Opens in a split, whatever the default |
 | Cmd/Ctrl and hover | Page preview popover, if the Page preview core plugin is on |
 | Right click | The full file menu, including entries other plugins add |
 | Click a tag chip | Filters to that tag |
@@ -95,6 +101,67 @@ does not build thousands of cards at once.
 notes reference it, and chips for the referencing notes. Clicking the row opens
 the link the same way clicking an unresolved link in a note does, which creates
 the note; clicking a chip opens the note that asked for it.
+
+## Folder levels
+
+A path usually says several independent things at once. In
+`raw/2026/physics/unit-3/notes.md`, `raw` is where the note came from, `2026` is
+when, `physics` is what it is about, and `unit-3` is which part of the subject.
+A folder tree can only be walked in that order, which is why the top level alone
+is nondescript: `raw` and `wiki` are a *source*, orthogonal to everything you
+actually browse by.
+
+Naming the levels once turns each of them into a filter you can use on its own:
+
+```
+raw/<year>/<subject>/<unit>
+wiki/<year>/<subject>/<unit>
+```
+
+Put those in **Settings → Cerebrum → Level patterns**, or press **Detect** to
+have Cerebrum read your folders and suggest one pattern per top level tree,
+which you then rename to taste.
+
+From then on the rail grows a section per level. Picking **2026** narrows the
+subject list to the subjects taught that year; picking **physics** narrows the
+units to the ones that subject has. Every active filter appears as a chip above
+the toolbar and can be removed on its own. The filters are independent of where
+you are browsing, so *physics* alone gathers the subject across `raw/`, `wiki/`
+and any other tree at once — the thing the folder hierarchy cannot do.
+
+**Group by** gains an entry per level, and cards show their level values instead
+of a raw path. Clicking a value on a card filters to it.
+
+### Patterns in detail
+
+| Piece | Meaning |
+| --- | --- |
+| `<name>` | Captures this folder as the level `name` |
+| a literal, like `raw` | Must match that folder name, case insensitively |
+| `*` | Matches any one folder without capturing it |
+| `**` | Ends the pattern explicitly; anything below is ignored |
+| `#` at the start of a line | A comment |
+
+Patterns are tried in order and the first one that matches wins.
+
+### What happens when the vault does not fit
+
+These are the cases worth knowing, all of which resolve without you doing
+anything:
+
+| Situation | What happens |
+| --- | --- |
+| A folder nested deeper than the pattern, say `unit-3/lab/` | The note keeps `unit-3`. Anything below the last named level stays with that level |
+| A note higher up than the pattern, say `raw/2026/note.md` | It gets `year`, and simply has no `subject` or `unit`. Grouping puts it under "No subject" |
+| A whole tree matching no pattern, say `inbox/` | It has no level values, and is still browsable under Spaces exactly as before |
+| A new folder at a named level, say a new subject | It appears as a new value in that level's list on the next rebuild. Nothing to configure |
+| A tree organised differently, say `archive/<subject>/<year>` | Give it its own pattern line. Different trees can name the same levels in a different order |
+| One note filed in the wrong place | Add the level to its frontmatter — `subject: physics` — which overrides whatever the path says |
+| A note that belongs somewhere it does not live | Same: frontmatter wins, so it can sit in `inbox/` and still file under a subject |
+
+Level names are yours. Year, subject and unit suit a course; topic, project and
+stage suit other work. Cerebrum only treats one name specially: a level whose
+values look like years sorts newest first everywhere it appears.
 
 ## The graph
 
@@ -109,7 +176,7 @@ the note; clicking a chip opens the note that asked for it.
 | Filled node | A note |
 | Hollow node | A page that does not exist yet |
 | Node size | Grows with the number of links touching the page |
-| Node colour | Its top level folder, matching the legend |
+| Node colour | Its top level folder, or a level you chose, matching the legend |
 
 Hovering a node highlights it and everything it links to or from, and dims the
 rest. The status line under the canvas reports node and link counts, and says so
@@ -124,6 +191,9 @@ when the node limit hid part of the vault.
   on whatever note you open, out to the depth chosen beside it (1–4 steps,
   following links in both directions). The **x** button returns to the whole
   vault.
+- **Colour** picks what node colour means: the top level folder, or any level
+  you have configured. Colouring by subject and then clicking a legend entry
+  filters the graph to that subject.
 - Toggles for **attachments**, **missing pages**, **unlinked notes**, **arrows**
   and **labels**. All are remembered between sessions.
 - **Fit to view** frames every node; **run the layout again** unpins everything
@@ -163,6 +233,8 @@ A few habits make the views considerably more useful:
 
 - **Hide the folders you never browse** — templates, attachment dumps, archived
   dailies. They drop out of both views and out of link resolution.
+- **Name your folder levels.** It is the single change that makes a large vault
+  browsable: one click for every physics note of 2026, wherever it lives.
 - **Give important notes a `description` in frontmatter.** It becomes the card
   excerpt, which turns the browser into something you can skim.
 - **Check Missing pages regularly.** It is the list of notes you have promised

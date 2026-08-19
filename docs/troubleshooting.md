@@ -53,12 +53,29 @@ In order, check:
 
 Giving a note a `description` in frontmatter always wins over reading the body.
 
+## A level is missing, or a note is filed under the wrong one
+
+Check the pattern for that tree in **Settings → Cerebrum → Level patterns**:
+
+- **No level sections in the rail at all** — no patterns are configured. Press
+  **Detect** to start from your existing folders.
+- **A whole tree has no levels** — no pattern matches it. Patterns are tried in
+  order and literals must match the folder name, so `raw/<year>` will not match
+  `Raw Notes/2026`. Add a line for that tree.
+- **A note is missing the deepest level** — it lives higher up than the pattern
+  reaches. That is expected; it groups under "No unit".
+- **One note is wrong** — give it the level in its own frontmatter, for example
+  `subject: physics`, which overrides the path.
+
+Level changes rebuild the index, so they take effect as soon as you stop typing.
+
 ## A link is not showing in the graph
 
 - **The target is in a hidden folder.** Excluded paths cannot resolve, so the
   link is reported as a missing page instead.
-- **The filter box is set.** Links to pages outside the filter are dropped on
-  purpose, so a filtered graph shows only matching pages and links among them.
+- **The filter box is set, or a level chip is active.** Links to pages outside
+  the filter are dropped on purpose, so a filtered graph shows only matching
+  pages and links among them.
 - **Local mode is on** at a depth that does not reach the target. Raise the
   depth or press the **x** to return to the whole vault.
 - **Unlinked notes are turned off** and the note has no other links.
@@ -95,7 +112,8 @@ variables without triggering it can leave stale colours; reopen the graph tab.
 Values are validated on load: anything of the wrong type falls back to its
 default rather than being trusted. If you hand-edited `data.json`, check the
 types against the reference in [settings](settings.md#what-the-file-looks-like) —
-`recentDays` is a number, `excludedFolders` an array of strings.
+`recentDays` is a number, `excludedFolders` and `facetPatterns` are arrays of
+strings.
 
 ## Reporting something else
 

@@ -12,6 +12,7 @@ src/
   types.ts                the shared vocabulary: NoteEntry, FolderEntry, LinkRef
   core/
     vault-model.ts        the index of folders, notes, tags, links and backlinks
+    facets.ts             folder levels: patterns, matching, counting, detection
     link-graph.ts         nodes and edges, local graphs, ghosts, scope filtering
     filters.ts            fuzzy search, sorting, grouping
     excerpts.ts           lazy note previews with a modification-time cache
@@ -60,9 +61,9 @@ flowchart TD
 2. **Files.** For each file from `vault.getFiles()`, build a `NoteEntry` from
    `metadataCache.getFileCache`: title (frontmatter `title` or the file name),
    summary (`description`, `summary` or `abstract`), tags via `getAllTags`,
-   aliases, timestamps, and whether it is a note (`.md` or `.canvas`) or an
-   attachment. Note counts propagate up the folder chain; attachments are
-   indexed but not counted.
+   aliases, timestamps, facet values (see below), and whether it is a note
+   (`.md` or `.canvas`) or an attachment. Note counts propagate up the folder
+   chain; attachments are indexed but not counted.
 3. **Links.** For each markdown note, collect `cache.links`, `cache.embeds` and
    `cache.frontmatterLinks`, resolve each through
    `metadataCache.getFirstLinkpathDest`, and record it as a `LinkRef` carrying
@@ -79,14 +80,43 @@ Attachments are always indexed, and the **Show attachments** setting filters at
 the view layer instead. That keeps the graph's own attachment toggle independent
 of the browser's.
 
+## Facets
+
+`facets.ts` turns a path into meaning. A pattern such as
+`raw/<year>/<subject>/<unit>` names each folder level once; matching a note's
+folder segments against it yields `{year, subject, unit}`, which the note then
+carries as independent filters.
+
+The matching rules are deliberately forgiving, because a real vault is never
+uniform:
+
+- **Deeper than the pattern**: extra segments are ignored, so a folder someone
+  nests inside a unit does not knock its notes out of that unit.
+- **Shallower than the pattern**: matching stops when the path runs out, and the
+  levels never reached are simply absent rather than a failure.
+- **A literal that does not match**: the rule fails and the next one is tried.
+  A note matching no rule has no levels and stays browsable by folder.
+- **Frontmatter**: a key named after a level overrides whatever the path says,
+  which is the escape hatch for a note filed in the wrong place.
+
+Facet *counts* are what make the rail feel like a search rather than a tree.
+`countValues` counts a facet's values under every active filter **except its
+own**, which is what lets a year narrow the subject list while leaving all years
+listed so you can switch in one click.
+
+`detectRules` guesses patterns from the vault's own shape, one per top level
+tree, naming a level `year` when most of its values look like years. It is
+wired to a button rather than run automatically, so the guess lands in an
+editable box instead of silently deciding the vault's structure.
+
 ## Building the graph
 
 `buildGraph` takes the index and a set of options and returns nodes and edges.
 
 1. **Include** the notes that pass the attachment filter.
 2. **Scope** them: in local mode, a breadth-first walk out from the focused note
-   to the configured depth, following links in both directions; then the query
-   filter over path, title and tags.
+   to the configured depth, following links in both directions; then any facet
+   filters; then the query filter over path, title and tags.
 3. **Build** nodes for the scope, then walk each scoped note's outgoing
    references. A reference to a note **outside the scope is skipped**, which is
    what keeps a depth of one at a depth of one and stops a filter from dragging
