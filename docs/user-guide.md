@@ -33,11 +33,8 @@ middle.
 
 ### The rail
 
-**Levels** come first when you have configured them — see
-[folder levels](#folder-levels) below. Each one lists its values with counts,
-and picking a value narrows the lists below it.
-
-**Collections** are computed from the link structure, not the folder layout:
+**Collections** choose which set of notes you are looking at, computed from the
+link structure rather than the folder layout:
 
 | Collection | Contains |
 | --- | --- |
@@ -46,6 +43,10 @@ and picking a value narrows the lists below it.
 | Link hubs | Notes with incoming links, most linked first |
 | Orphans | Notes with no links in and no resolved links out |
 | Missing pages | Link targets that have no note behind them, with the pages referencing them |
+
+**Levels** come next, one section each — see [levels](#levels) below. Where a
+collection chooses the set, levels refine it: each lists its values with counts,
+and picking one narrows the lists under it.
 
 **Spaces** are your folders. The rail lists the top level, and unfolds the
 branch you are currently inside so you keep sight of the rest of the vault while
