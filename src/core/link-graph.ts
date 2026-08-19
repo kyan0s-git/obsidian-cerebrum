@@ -1,5 +1,5 @@
 import type { LinkKind, NoteEntry } from '../types';
-import { matchesFilters } from './facets';
+import { firstValue, matchesFilters } from './facets';
 import type { VaultModel } from './vault-model';
 
 export type GraphNodeKind = 'note' | 'attachment' | 'ghost';
@@ -189,7 +189,7 @@ function colorKeyFor(note: NoteEntry, colorBy: string): string {
 	if (colorBy === '') {
 		return note.space;
 	}
-	return note.facets[colorBy] ?? '';
+	return firstValue(note.facets, colorBy) ?? '';
 }
 
 function makeNode(

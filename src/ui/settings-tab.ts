@@ -1,4 +1,5 @@
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { BUILD_VERSION } from '../build-info';
 import { detectRules } from '../core/facets';
 import type CerebrumPlugin from '../main';
 
@@ -174,6 +175,21 @@ export class CerebrumSettingTab extends PluginSettingTab {
 						save();
 					}),
 			);
+
+		this.renderBuildInfo(containerEl);
+	}
+
+	/** The exact build in use, for bug reports. */
+	private renderBuildInfo(containerEl: HTMLElement): void {
+		new Setting(containerEl)
+			.setName('Build')
+			.setDesc(BUILD_VERSION)
+			.addButton((button) =>
+				button.setButtonText('Copy').onClick(() => {
+					void navigator.clipboard.writeText(BUILD_VERSION);
+					new Notice('Build version copied.');
+				}),
+			);
 	}
 
 	/**
@@ -183,10 +199,25 @@ export class CerebrumSettingTab extends PluginSettingTab {
 	private renderFacetSettings(containerEl: HTMLElement): void {
 		const settings = this.plugin.settings;
 
-		new Setting(containerEl).setName('Folder levels').setHeading();
+		new Setting(containerEl).setName('Levels').setHeading();
 
 		new Setting(containerEl)
-			.setName('Level patterns')
+			.setName('Find levels automatically')
+			.setDesc(
+				'Reads nested tags such as status/active and frontmatter properties used across several notes, and offers each as a filter. No setup needed.',
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(settings.autoFacets).onChange((value) => {
+					settings.autoFacets = value;
+					void this.plugin.saveSettings(true);
+					this.display();
+				}),
+			);
+
+		this.renderDiscoveredLevels(containerEl);
+
+		new Setting(containerEl)
+			.setName('Folder level patterns')
 			.setDesc(
 				'One pattern per line naming each folder level, such as raw/<year>/<subject>/<unit>. Anything nested deeper stays with the level above it, and a note can override a level in its own frontmatter.',
 			)
@@ -205,7 +236,24 @@ export class CerebrumSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Detect levels from the vault')
+			.setName('Hidden levels')
+			.setDesc('Level names to leave out of the views, one per line.')
+			.addTextArea((area) => {
+				area
+					.setPlaceholder('Status')
+					.setValue(settings.hiddenFacets.join('\n'))
+					.onChange((value) => {
+						settings.hiddenFacets = value
+							.split('\n')
+							.map((line) => line.trim())
+							.filter((line) => line !== '');
+						void this.plugin.saveSettings(true);
+					});
+				area.inputEl.rows = 2;
+			});
+
+		new Setting(containerEl)
+			.setName('Detect folder levels')
 			.setDesc(
 				'Reads the folders you already have and suggests a pattern for each top level tree. Rename the levels to taste.',
 			)
@@ -226,5 +274,28 @@ export class CerebrumSettingTab extends PluginSettingTab {
 					new Notice(`Detected ${detected.length} patterns.`);
 				}),
 			);
+	}
+
+	/** What discovery found, so the automatic behaviour is never a mystery. */
+	private renderDiscoveredLevels(containerEl: HTMLElement): void {
+		if (!this.plugin.settings.autoFacets) {
+			return;
+		}
+		const found = this.plugin.model.getFacetDefinitions();
+		const setting = new Setting(containerEl).setName('Levels found');
+		if (found.length === 0) {
+			setting.setDesc(
+				'Nothing yet. Nested tags and repeated frontmatter properties both become levels once a few notes share them.',
+			);
+			return;
+		}
+		setting.setDesc(
+			found
+				.map(
+					(definition) =>
+						`${definition.name} (${definition.source}, ${definition.coverage} notes)`,
+				)
+				.join(', '),
+		);
 	}
 }

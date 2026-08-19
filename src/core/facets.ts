@@ -1,23 +1,28 @@
 /**
- * Facets: the folder path, read as meaning rather than as a location.
+ * Levels: the structure a vault already has, read as filters.
  *
- * A second brain usually encodes several independent things in one path —
- * `raw/2026/physics/unit-3/notes.md` says where the note came from, when it is
- * from, what it is about, and which part of the subject it belongs to. A folder
- * tree can only be walked in that fixed order, which is why the top level alone
- * is nondescript: `raw` and `wiki` are a *source*, orthogonal to everything you
- * actually want to browse by.
+ * A second brain encodes several independent things at once, and almost never
+ * in one place. A path says `raw/2026/physics/unit-3`. A nested tag says
+ * `#status/active`. A property says `type: reference`. All three are the same
+ * shape — a named dimension with a small set of repeating values — and all
+ * three are useless as long as they can only be walked in the order the folder
+ * tree happens to impose.
  *
- * A pattern names each level once:
+ * A level is that dimension, whatever it came from:
  *
- *     raw/<year>/<subject>/<unit>
- *     wiki/<year>/<subject>/<unit>
+ * - **path**, named by a pattern such as `raw/<year>/<subject>/<unit>`
+ * - **tag**, from the namespace of a nested tag: `#subject/physics`
+ * - **property**, from a frontmatter key used consistently across notes
  *
- * and from then on every note carries `year`, `subject` and `unit` as
- * independent filters that can be combined in any order, across every tree.
+ * Tags and properties name themselves, so they are discovered automatically and
+ * a vault gets useful levels without being configured at all. Paths cannot name
+ * themselves, so they are the one source that asks for a pattern.
  */
 
-/** One segment of a pattern. */
+/** Where a level's values came from. */
+export type FacetSource = 'path' | 'tag' | 'property';
+
+/** One segment of a path pattern. */
 type PatternSegment =
 	| { kind: 'literal'; value: string }
 	| { kind: 'capture'; name: string }
@@ -30,10 +35,19 @@ export interface FacetRule {
 	segments: PatternSegment[];
 }
 
-/** Facet values for one note, keyed by facet name. */
-export type FacetValues = Record<string, string>;
+/**
+ * Level values for one note. A note can sit in several values of the same
+ * level, because tags and list properties are naturally plural.
+ */
+export type FacetValues = Record<string, string[]>;
 
-/** A facet value and how many notes carry it. */
+export interface FacetDefinition {
+	name: string;
+	source: FacetSource;
+	/** Notes carrying at least one value of this level. */
+	coverage: number;
+}
+
 export interface FacetCount {
 	value: string;
 	count: number;
@@ -41,8 +55,42 @@ export interface FacetCount {
 
 const YEAR_PATTERN = /^(?:19|20)\d{2}(?:[-/–]\d{2,4})?$/;
 
-/** Names suggested for detected levels, in order, after any year level. */
-const SUGGESTED_NAMES = ['subject', 'unit', 'topic', 'section'];
+/** Names suggested for detected path levels, after any year level. */
+const SUGGESTED_NAMES = ['category', 'topic', 'subtopic', 'section'];
+
+/** Frontmatter keys that are Obsidian's own, or prose rather than a category. */
+const RESERVED_KEYS = new Set([
+	'title',
+	'aliases',
+	'alias',
+	'tags',
+	'tag',
+	'cssclass',
+	'cssclasses',
+	'description',
+	'summary',
+	'abstract',
+	'permalink',
+	'publish',
+	'position',
+	'banner',
+	'icon',
+	'id',
+	'uid',
+]);
+
+/** A level needs this many notes before it is worth showing. */
+const MIN_NOTES = 3;
+/** More distinct values than this is an identifier, not a category. */
+const MAX_VALUES = 40;
+/** Values must repeat: this many distinct values per note at most. */
+const MAX_VALUE_RATIO = 0.75;
+/** Longer values are prose, not a category. */
+const MAX_VALUE_LENGTH = 40;
+/** Cap on discovered levels, so the rail cannot fill with noise. */
+const MAX_DISCOVERED = 6;
+
+// ---------------------------------------------------------------- path levels
 
 /**
  * Parses pattern lines. Blank lines and `#` comments are ignored, so the
@@ -83,8 +131,8 @@ export function parseRules(lines: string[]): FacetRule[] {
 	return rules;
 }
 
-/** Facet names in the order they first appear across the rules. */
-export function facetNames(rules: FacetRule[]): string[] {
+/** Level names in the order the patterns declare them. */
+export function patternNames(rules: FacetRule[]): string[] {
 	const names: string[] = [];
 	for (const rule of rules) {
 		for (const segment of rule.segments) {
@@ -137,62 +185,218 @@ function matchRule(folders: string[], rule: FacetRule): FacetValues | null {
 			continue;
 		}
 		if (segment.kind === 'capture') {
-			values[segment.name] = folder;
+			values[segment.name] = [folder];
 		}
 	}
 	return values;
+}
+
+// ----------------------------------------------------------- tags, properties
+
+/** The namespace and value of a nested tag, or null for a flat one. */
+export function splitTag(tag: string): { name: string; value: string } | null {
+	const parts = tag.replace(/^#/, '').split('/');
+	const name = parts[0];
+	const value = parts[1];
+	if (parts.length < 2 || !name || !value) {
+		return null;
+	}
+	return { name: name.toLowerCase(), value };
+}
+
+/** Values a frontmatter entry contributes, if it looks like a category. */
+export function propertyValues(value: unknown): string[] {
+	if (typeof value === 'string') {
+		const trimmed = value.trim();
+		return trimmed === '' || trimmed.length > MAX_VALUE_LENGTH
+			? []
+			: [trimmed];
+	}
+	if (typeof value === 'number' && Number.isFinite(value)) {
+		return [String(value)];
+	}
+	if (typeof value === 'boolean') {
+		return [value ? 'yes' : 'no'];
+	}
+	if (Array.isArray(value)) {
+		const values: string[] = [];
+		for (const item of value) {
+			values.push(...propertyValues(item));
+		}
+		return values;
+	}
+	return [];
+}
+
+/** What a note offers to discovery, before any level has been chosen. */
+export interface FacetCandidateSource {
+	tags: string[];
+	frontmatter: Record<string, unknown> | undefined;
 }
 
 /**
- * Facet values for a note. Frontmatter wins over the path, so a note filed in
- * the wrong place, or one that belongs to two subjects, can say so itself
- * without being moved.
+ * Finds the levels a vault already has. A candidate qualifies when its values
+ * repeat across enough notes to be worth filtering by, and stays out when it
+ * looks like an identifier, a date stamp or a sentence.
+ */
+export function discoverFacets(
+	notes: FacetCandidateSource[],
+	options: { exclude?: string[]; limit?: number } = {},
+): FacetDefinition[] {
+	const excluded = new Set(
+		(options.exclude ?? []).map((name) => name.toLowerCase()),
+	);
+	const tally = new Map<
+		string,
+		{ source: FacetSource; values: Map<string, number>; notes: number }
+	>();
+
+	const add = (
+		name: string,
+		source: FacetSource,
+		values: string[],
+	): void => {
+		if (values.length === 0 || excluded.has(name)) {
+			return;
+		}
+		const entry = tally.get(name) ?? {
+			source,
+			values: new Map<string, number>(),
+			notes: 0,
+		};
+		entry.notes += 1;
+		for (const value of new Set(values)) {
+			entry.values.set(value, (entry.values.get(value) ?? 0) + 1);
+		}
+		tally.set(name, entry);
+	};
+
+	for (const note of notes) {
+		for (const tag of note.tags) {
+			const split = splitTag(tag);
+			if (split) {
+				add(split.name, 'tag', [split.value]);
+			}
+		}
+		for (const [key, raw] of Object.entries(note.frontmatter ?? {})) {
+			const name = key.toLowerCase();
+			if (RESERVED_KEYS.has(name)) {
+				continue;
+			}
+			add(name, 'property', propertyValues(raw));
+		}
+	}
+
+	const definitions: FacetDefinition[] = [];
+	for (const [name, entry] of tally) {
+		const distinct = entry.values.size;
+		if (entry.notes < MIN_NOTES || distinct < 2 || distinct > MAX_VALUES) {
+			continue;
+		}
+		if (distinct / entry.notes > MAX_VALUE_RATIO) {
+			continue;
+		}
+		definitions.push({ name, source: entry.source, coverage: entry.notes });
+	}
+
+	return definitions
+		.sort((a, b) => b.coverage - a.coverage || a.name.localeCompare(b.name))
+		.slice(0, options.limit ?? MAX_DISCOVERED);
+}
+
+/** Values a note contributes to one discovered level. */
+export function valuesForDiscovered(
+	definition: FacetDefinition,
+	source: FacetCandidateSource,
+): string[] {
+	if (definition.source === 'tag') {
+		const values: string[] = [];
+		for (const tag of source.tags) {
+			const split = splitTag(tag);
+			if (split && split.name === definition.name) {
+				values.push(split.value);
+			}
+		}
+		return values;
+	}
+	for (const [key, raw] of Object.entries(source.frontmatter ?? {})) {
+		if (key.toLowerCase() === definition.name) {
+			return propertyValues(raw);
+		}
+	}
+	return [];
+}
+
+// -------------------------------------------------------------- combining all
+
+/**
+ * Every level value for one note. The path is the base, a frontmatter property
+ * of the same name replaces it — the escape hatch for a note filed somewhere
+ * its path does not describe — and tags add to it.
  */
 export function facetsForNote(
 	folders: string[],
-	frontmatter: Record<string, unknown> | undefined,
+	source: FacetCandidateSource,
 	rules: FacetRule[],
-	names: string[],
+	discovered: FacetDefinition[],
 ): FacetValues {
-	const values = matchFolders(folders, rules) ?? {};
-	if (!frontmatter) {
-		return values;
-	}
-	for (const name of names) {
-		const override = readFacetValue(frontmatter, name);
-		if (override !== undefined) {
+	const values: FacetValues = matchFolders(folders, rules) ?? {};
+
+	for (const name of patternNames(rules)) {
+		const override = propertyLookup(source.frontmatter, name);
+		if (override.length > 0) {
 			values[name] = override;
 		}
+	}
+
+	for (const definition of discovered) {
+		const found = valuesForDiscovered(definition, source);
+		if (found.length === 0) {
+			continue;
+		}
+		if (definition.source === 'property') {
+			values[definition.name] = unique(found);
+			continue;
+		}
+		values[definition.name] = unique([
+			...(values[definition.name] ?? []),
+			...found,
+		]);
 	}
 	return values;
 }
 
-function readFacetValue(
-	frontmatter: Record<string, unknown>,
+function propertyLookup(
+	frontmatter: Record<string, unknown> | undefined,
 	name: string,
-): string | undefined {
-	for (const key of Object.keys(frontmatter)) {
-		if (key.toLowerCase() !== name) {
-			continue;
-		}
-		const value = frontmatter[key];
-		if (typeof value === 'string' && value.trim() !== '') {
-			return value.trim();
-		}
-		if (typeof value === 'number' && Number.isFinite(value)) {
-			return String(value);
+): string[] {
+	for (const [key, raw] of Object.entries(frontmatter ?? {})) {
+		if (key.toLowerCase() === name) {
+			return propertyValues(raw);
 		}
 	}
-	return undefined;
+	return [];
 }
 
-/** True when a note matches every active facet filter. */
+function unique(values: string[]): string[] {
+	return Array.from(new Set(values));
+}
+
+/** The first value of a level, for places that can only show one. */
+export function firstValue(
+	values: FacetValues,
+	name: string,
+): string | undefined {
+	return values[name]?.[0];
+}
+
+/** True when a note matches every active filter. */
 export function matchesFilters(
 	values: FacetValues,
-	filters: FacetValues,
+	filters: Record<string, string>,
 ): boolean {
 	for (const [name, wanted] of Object.entries(filters)) {
-		if (values[name] !== wanted) {
+		if (!values[name]?.includes(wanted)) {
 			return false;
 		}
 	}
@@ -200,16 +404,16 @@ export function matchesFilters(
 }
 
 /**
- * Counts the values of one facet across notes, applying every *other* active
- * filter. Counting that way is what makes a facet list narrow as you drill in
- * while still letting you switch to a sibling value in one click.
+ * Counts the values of one level across notes, applying every *other* active
+ * filter. Counting that way is what makes a level narrow as you drill in while
+ * still letting you switch to a sibling value in one click.
  */
 export function countValues(
 	notes: { facets: FacetValues }[],
 	name: string,
-	filters: FacetValues,
+	filters: Record<string, string>,
 ): FacetCount[] {
-	const others: FacetValues = { ...filters };
+	const others: Record<string, string> = { ...filters };
 	delete others[name];
 
 	const counts = new Map<string, number>();
@@ -217,11 +421,9 @@ export function countValues(
 		if (!matchesFilters(note.facets, others)) {
 			continue;
 		}
-		const value = note.facets[name];
-		if (value === undefined) {
-			continue;
+		for (const value of note.facets[name] ?? []) {
+			counts.set(value, (counts.get(value) ?? 0) + 1);
 		}
-		counts.set(value, (counts.get(value) ?? 0) + 1);
 	}
 	return Array.from(counts.entries())
 		.map(([value, count]) => ({ value, count }))
@@ -237,6 +439,12 @@ function compareValues(a: FacetCount, b: FacetCount): number {
 	}
 	return a.value.localeCompare(b.value, undefined, { numeric: true });
 }
+
+export function isYearLike(value: string): boolean {
+	return YEAR_PATTERN.test(value);
+}
+
+// ------------------------------------------------------------ path detection
 
 /**
  * Guesses patterns from the vault's own shape, one per top level folder, so the

@@ -15,6 +15,10 @@ export interface CerebrumSettings {
 	excludedFolders: string[];
 	/** Patterns naming the folder levels, one per line. */
 	facetPatterns: string[];
+	/** Discover levels from nested tags and frontmatter properties. */
+	autoFacets: boolean;
+	/** Level names to leave out, one per line. */
+	hiddenFacets: string[];
 
 	/** Graph */
 	graphIncludeAttachments: boolean;
@@ -43,6 +47,8 @@ export const DEFAULT_SETTINGS: CerebrumSettings = {
 	recentDays: 14,
 	excludedFolders: [],
 	facetPatterns: [],
+	autoFacets: true,
+	hiddenFacets: [],
 
 	graphIncludeAttachments: false,
 	graphIncludeUnresolved: true,

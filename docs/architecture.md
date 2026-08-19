@@ -8,11 +8,12 @@ module it delegates to.
 src/
   main.ts                 lifecycle: views, commands, ribbon, event registration
   settings.ts             settings shape, defaults, safe merging of stored data
+  build-info.ts           the build stamp injected at bundle time
   constants.ts            view types, icons, debounce and paging constants
   types.ts                the shared vocabulary: NoteEntry, FolderEntry, LinkRef
   core/
     vault-model.ts        the index of folders, notes, tags, links and backlinks
-    facets.ts             folder levels: patterns, matching, counting, detection
+    facets.ts             levels: patterns, tag and property discovery, counting
     link-graph.ts         nodes and edges, local graphs, ghosts, scope filtering
     filters.ts            fuzzy search, sorting, grouping
     excerpts.ts           lazy note previews with a modification-time cache
@@ -80,15 +81,27 @@ Attachments are always indexed, and the **Show attachments** setting filters at
 the view layer instead. That keeps the graph's own attachment toggle independent
 of the browser's.
 
-## Facets
+## Levels
 
-`facets.ts` turns a path into meaning. A pattern such as
-`raw/<year>/<subject>/<unit>` names each folder level once; matching a note's
-folder segments against it yields `{year, subject, unit}`, which the note then
-carries as independent filters.
+`facets.ts` turns structure into filters, from three sources: folder paths named
+by a pattern, nested tag namespaces, and frontmatter properties. A note's values
+are multi-valued per level, because tags and list properties are plural.
 
-The matching rules are deliberately forgiving, because a real vault is never
-uniform:
+Tags and properties **name themselves**, so they are discovered rather than
+configured. `discoverFacets` tallies every tag namespace and every non-reserved
+frontmatter key across the vault and keeps the ones that behave like a category:
+at least three notes, between two and forty distinct values, and values that
+repeat rather than being unique per note. That last ratio is what excludes ids
+and timestamps, which are the two things that would otherwise flood the rail.
+The result is capped, so a messy vault cannot produce twenty sections.
+
+Discovery has to see the whole vault before it can decide, which is why the
+index runs it as a separate pass: files are indexed first, holding each note's
+tags and frontmatter aside, then the levels are chosen, then every note's values
+are filled in and the held material is dropped.
+
+Path levels cannot name themselves, so they take a pattern. The matching rules
+are deliberately forgiving, because a real vault is never uniform:
 
 - **Deeper than the pattern**: extra segments are ignored, so a folder someone
   nests inside a unit does not knock its notes out of that unit.
@@ -97,9 +110,10 @@ uniform:
 - **A literal that does not match**: the rule fails and the next one is tried.
   A note matching no rule has no levels and stays browsable by folder.
 - **Frontmatter**: a key named after a level overrides whatever the path says,
-  which is the escape hatch for a note filed in the wrong place.
+  which is the escape hatch for a note filed in the wrong place. A tag namespace
+  of the same name adds to the values instead of replacing them.
 
-Facet *counts* are what make the rail feel like a search rather than a tree.
+Level *counts* are what make the rail feel like a search rather than a tree.
 `countValues` counts a facet's values under every active filter **except its
 own**, which is what lets a year narrow the subject list while leaving all years
 listed so you can switch in one click.
@@ -195,6 +209,18 @@ box never re-creates the input under the caret.
 Subscriptions are handed out by `VaultModel.subscribe`, which returns its own
 unsubscriber; each view calls it in `onClose` alongside disconnecting its resize
 observer and cancelling its animation frame.
+
+## The build stamp
+
+`esbuild.config.mjs` computes `x.y.z+MMDD.sha` at bundle time and injects it
+through `define`, so the artifact can say what it is. `build-info.ts` reads it
+behind a `typeof` guard, which means a build without the define still loads and
+simply reports `unknown` rather than throwing.
+
+The metadata deliberately stops at the artifact. SemVer excludes build metadata
+from precedence, and Obsidian compares `manifest.json`'s version against release
+tags, so both stay a plain `x.y.z` and only the string the plugin reports about
+itself carries the date and commit.
 
 ## Deliberate constraints
 

@@ -1,5 +1,7 @@
 import esbuild from 'esbuild';
 import process from 'process';
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 
 const banner = `/*
@@ -10,12 +12,54 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = process.argv[2] === 'production';
 
+/**
+ * SemVer build metadata: the release version, then the build date and the
+ * commit it came from. The manifest and the git tag stay a plain `x.y.z`,
+ * because that is what Obsidian matches releases against; the metadata after
+ * the `+` is carried by the build alone.
+ */
+function buildVersion() {
+	const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
+	const version = manifest.version;
+	if (!prod) {
+		return `${version}+dev`;
+	}
+	const now = new Date();
+	const stamp =
+		String(now.getUTCMonth() + 1).padStart(2, '0') +
+		String(now.getUTCDate()).padStart(2, '0');
+	return `${version}+${stamp}.${commit()}`;
+}
+
+function commit() {
+	const fromCi = process.env.GITHUB_SHA;
+	if (fromCi) {
+		return fromCi.slice(0, 7);
+	}
+	try {
+		return execSync('git rev-parse --short=7 HEAD', {
+			encoding: 'utf8',
+			stdio: ['ignore', 'pipe', 'ignore'],
+		}).trim();
+	} catch {
+		return 'nogit';
+	}
+}
+
+const version = buildVersion();
+if (prod) {
+	console.log(`Building ${version}`);
+}
+
 const context = await esbuild.context({
 	banner: {
 		js: banner,
 	},
 	entryPoints: ['src/main.ts'],
 	bundle: true,
+	define: {
+		__CEREBRUM_BUILD__: JSON.stringify(version),
+	},
 	external: [
 		'obsidian',
 		'electron',

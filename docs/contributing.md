@@ -90,22 +90,47 @@ folder created while a view is open, a note with a frontmatter link, a link to a
 note that does not exist, a hidden folder that is the target of a link, and both
 a light and a dark theme.
 
+## Versioning
+
+Releases are plain SemVer: `x.y.z` in `manifest.json`, in `versions.json`, and
+as the git tag. Nothing else, because Obsidian matches a release tag against the
+manifest version literally.
+
+Builds additionally carry SemVer **build metadata**: `1.0.0+0819.7e3366f`, being
+the build date as MMDD and the commit. `esbuild.config.mjs` computes it and
+injects it through `define`; the plugin shows it under **Settings → Cerebrum →
+Build**, and the release is titled with it. Build metadata is excluded from
+precedence by the SemVer spec, which is exactly why it belongs on the artifact
+and not in the manifest or the tag.
+
+A development build stamps `x.y.z+dev`, so a build from a watch session is never
+mistaken for a release.
+
 ## Releasing
 
-1. Update `version` in `manifest.json` (semver, no `v` prefix) and add the
-   version to `versions.json` mapped to its minimum app version. `npm version
-   patch|minor|major` does both plus `package.json`.
+1. Update `version` in `manifest.json` and add it to `versions.json` mapped to
+   its minimum app version. `npm version patch|minor|major` does both plus
+   `package.json`.
 2. Raise `minAppVersion` if you have started using a newer API.
-3. Commit, then tag and push:
+3. Commit and push to the default branch.
+4. Release, either way round:
+
+   **From the Actions tab** — run **Release Obsidian plugin** with
+   `workflow_dispatch`. It builds, lints, checks the build carries its stamp,
+   creates the tag, and publishes the release. Leave *version* blank to use the
+   manifest, and tick *draft* if you want to review it first.
 
    ```bash
-   git tag -a 1.0.1 -m "Cerebrum 1.0.1"
-   git push origin 1.0.1
+   gh workflow run release.yml -f draft=false
    ```
 
-4. `.github/workflows/release.yml` builds the tag, attests build provenance, and
-   opens a **draft** release with `main.js`, `manifest.json` and `styles.css`
-   attached. Review it and publish.
+   **By pushing a tag** — `git tag -a 1.0.1 -m "Cerebrum 1.0.1" && git push
+   origin 1.0.1`. Same workflow, except a tag push always produces a **draft**
+   for you to review and publish.
 
-The tag must match `manifest.json`'s version exactly. `main.js` is gitignored on
-purpose: it is a release artifact, not source.
+Either path attests build provenance and attaches `main.js`, `manifest.json` and
+`styles.css`. The workflow refuses to run if the version is not a plain `x.y.z`
+or does not match `manifest.json`, so a mismatched tag fails loudly instead of
+producing a release Obsidian will not install.
+
+`main.js` is gitignored on purpose: it is a release artifact, not source.

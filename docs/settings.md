@@ -25,17 +25,19 @@ Hidden folders are matched by path prefix, so `archive` hides `archive` and
 `archive/2019/notes.md` but not `archived-ideas`. Leading and trailing slashes
 are ignored, and blank lines are dropped.
 
-## Folder levels
+## Levels
 
 | Setting | Default | Where | Effect |
 | --- | --- | --- | --- |
-| Level patterns | empty | Settings | One pattern per line naming the folder levels, such as `raw/<year>/<subject>/<unit>`. Each named level becomes a filter in the rail, a grouping option, and a chip on cards |
-| Detect levels from the vault | — | Settings | Reads your folders and replaces the patterns with one suggestion per top level tree |
+| Find levels automatically | on | Settings | Discovers levels from nested tags (`#status/active`) and frontmatter properties used across several notes. Needs no configuration |
+| Levels found | — | Settings | Read-only: what discovery found, with each level's source and note count |
+| Hidden levels | empty | Settings | Level names to leave out of the views, one per line |
+| Folder level patterns | empty | Settings | One pattern per line naming the folder levels, such as `raw/<year>/<subject>/<unit>` |
+| Detect folder levels | — | Settings | Reads your folders and replaces the patterns with one suggestion per top level tree |
 
-Patterns are covered in full in the
-[user guide](user-guide.md#folder-levels), including what happens to notes that
-sit deeper or shallower than the pattern and how frontmatter overrides a level.
-Changing the patterns rebuilds the index.
+Levels are covered in full in the [user guide](user-guide.md#levels): the three
+sources, what discovery accepts and refuses, and what happens to notes that sit
+deeper or shallower than a pattern. All four settings rebuild the index.
 
 ## Graph
 
@@ -84,6 +86,8 @@ it. Values much above `0.2` compress the whole graph into the centre.
   "recentDays": 14,
   "excludedFolders": [],
   "facetPatterns": [],
+  "autoFacets": true,
+  "hiddenFacets": [],
   "graphIncludeAttachments": false,
   "graphIncludeUnresolved": true,
   "graphIncludeOrphans": true,
@@ -104,6 +108,14 @@ than accepted. Deleting `data.json` resets everything.
 
 ## Which changes rebuild the index
 
-Most settings only affect what is drawn. Three change what is indexed, and
-rebuild it when you change them: **Show attachments**, **Hidden folders** and
-**Level patterns**. That rebuild also clears the excerpt cache.
+Most settings only affect what is drawn. These change what is indexed and
+rebuild it when you change them: **Show attachments**, **Hidden folders**, and
+everything under **Levels**. That rebuild also clears the excerpt cache.
+
+## Build
+
+The bottom of the settings tab shows the exact build in use, such as
+`1.0.0+0819.7e3366f`, with a button to copy it for a bug report. The part after
+the `+` is SemVer build metadata: the build date as MMDD, and the commit the
+build came from. It never appears in `manifest.json` or in a release tag, both
+of which stay a plain `x.y.z`, because that is what Obsidian compares.

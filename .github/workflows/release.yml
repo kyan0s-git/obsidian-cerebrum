@@ -4,6 +4,22 @@ on:
     push:
         tags:
             - '*'
+    workflow_dispatch:
+        inputs:
+            version:
+                description: 'Version to release, x.y.z. Defaults to manifest.json.'
+                required: false
+                type: string
+            draft:
+                description: 'Create the release as a draft'
+                required: false
+                default: false
+                type: boolean
+            prerelease:
+                description: 'Mark the release as a pre-release'
+                required: false
+                default: false
+                type: boolean
 
 jobs:
     build:
@@ -14,6 +30,8 @@ jobs:
             attestations: write
         steps:
             - uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
 
             - name: Use Node.js
               uses: actions/setup-node@v6
@@ -21,10 +39,51 @@ jobs:
                   node-version: 24
                   cache: 'npm'
 
+            # The tag is the release version and must be a plain x.y.z, because
+            # that is what Obsidian matches against manifest.json. The date and
+            # commit ride along as SemVer build metadata after the '+', which is
+            # excluded from version precedence by the spec.
+            - name: Resolve version
+              id: version
+              run: |
+                  manifest_version="$(node -p "require('./manifest.json').version")"
+                  if [ "${{ github.event_name }}" = "push" ]; then
+                      version="${GITHUB_REF#refs/tags/}"
+                  else
+                      version="${{ inputs.version }}"
+                      version="${version:-$manifest_version}"
+                  fi
+
+                  if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+                      echo "::error::Version '$version' is not a plain x.y.z, which Obsidian requires."
+                      exit 1
+                  fi
+                  if [ "$version" != "$manifest_version" ]; then
+                      echo "::error::Version '$version' does not match manifest.json ('$manifest_version')."
+                      exit 1
+                  fi
+
+                  build="${version}+$(date -u +%m%d).$(git rev-parse --short=7 HEAD)"
+                  {
+                      echo "version=$version"
+                      echo "build=$build"
+                      echo "commit=$(git rev-parse HEAD)"
+                      echo "date=$(date -u +%Y-%m-%d)"
+                  } >> "$GITHUB_OUTPUT"
+                  echo "Releasing $build"
+
             - name: Build plugin
               run: |
                   npm ci
                   npm run build
+                  npm run lint
+
+            - name: Check the build carries its own version
+              run: |
+                  if ! grep -qF '${{ steps.version.outputs.build }}' main.js; then
+                      echo "::error::main.js does not carry the build stamp."
+                      exit 1
+                  fi
 
             - name: Check for optional styles
               id: styles
@@ -38,13 +97,57 @@ jobs:
                       main.js
                       ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
 
+            - name: Create the tag
+              if: github.event_name == 'workflow_dispatch'
+              env:
+                  VERSION: ${{ steps.version.outputs.version }}
+              run: |
+                  if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+                      echo "Tag $VERSION already exists, leaving it alone."
+                      exit 0
+                  fi
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git tag -a "$VERSION" -m "Cerebrum $VERSION"
+                  git push origin "refs/tags/$VERSION"
+
             - name: Create release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  VERSION: ${{ steps.version.outputs.version }}
+                  BUILD: ${{ steps.version.outputs.build }}
+                  COMMIT: ${{ steps.version.outputs.commit }}
+                  BUILT_ON: ${{ steps.version.outputs.date }}
               run: |
-                  tag="${GITHUB_REF#refs/tags/}"
+                  # Tag pushes stay drafts, as they always have. A dispatch does
+                  # what its input asks for.
+                  draft_flag="--draft"
+                  prerelease_flag=""
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                      [ "${{ inputs.draft }}" = "true" ] || draft_flag=""
+                      [ "${{ inputs.prerelease }}" = "true" ] && prerelease_flag="--prerelease"
+                  fi
 
-                  gh release create "$tag" \
-                    --title="$tag" \
-                    --draft \
+                  if gh release view "$VERSION" >/dev/null 2>&1; then
+                      echo "::notice::Release $VERSION already exists, uploading assets to it."
+                      gh release upload "$VERSION" --clobber \
+                        main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+                      exit 0
+                  fi
+
+                  notes="$(cat <<EOF
+                  Build \`$BUILD\` — built $BUILT_ON from \`$COMMIT\`.
+
+                  The version after the \`+\` is SemVer build metadata: the build date as MMDD and the commit it came from. It identifies the artifact without taking part in version comparison, so \`manifest.json\` and this tag stay a plain \`$VERSION\`, which is what Obsidian matches releases against. The same string is shown under **Settings → Cerebrum → Build**.
+
+                  ## Installing
+
+                  Copy \`main.js\`, \`manifest.json\` and \`styles.css\` into \`<YourVault>/.obsidian/plugins/cerebrum/\`, then enable **Cerebrum** in **Settings → Community plugins**. Requires Obsidian 1.7.2 or later.
+                  EOF
+                  )"
+
+                  gh release create "$VERSION" \
+                    --title "$BUILD" \
+                    --notes "$notes" \
+                    $draft_flag $prerelease_flag \
                     main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}

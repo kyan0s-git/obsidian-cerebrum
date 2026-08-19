@@ -102,32 +102,72 @@ notes reference it, and chips for the referencing notes. Clicking the row opens
 the link the same way clicking an unresolved link in a note does, which creates
 the note; clicking a chip opens the note that asked for it.
 
-## Folder levels
+## Levels
 
-A path usually says several independent things at once. In
-`raw/2026/physics/unit-3/notes.md`, `raw` is where the note came from, `2026` is
-when, `physics` is what it is about, and `unit-3` is which part of the subject.
-A folder tree can only be walked in that order, which is why the top level alone
-is nondescript: `raw` and `wiki` are a *source*, orthogonal to everything you
-actually browse by.
+A vault encodes several independent things at once, and rarely in one place. A
+path says `raw/2026/physics/unit-3`. A nested tag says `#status/active`. A
+property says `type: reference`. All three are the same shape — a named
+dimension with a small set of repeating values — and all three are stuck as long
+as they can only be reached in the order the folder tree imposes. That is why
+the top level alone is nondescript: `raw` and `wiki` are a *source*, orthogonal
+to everything you actually browse by.
 
-Naming the levels once turns each of them into a filter you can use on its own:
+A **level** is that dimension, wherever it came from. Cerebrum reads three
+sources:
+
+| Source | Looks like | Configuration |
+| --- | --- | --- |
+| Nested tags | `#status/active` gives level `status`, value `active` | None |
+| Frontmatter properties | `type: reference` gives level `type` | None |
+| Folder paths | `raw/2026/physics/unit-3` | One pattern per tree |
+
+Tags and properties name themselves, so Cerebrum finds them on its own: a vault
+that uses nested tags or consistent properties gets working levels the moment
+the plugin is enabled. Paths cannot name themselves, so they are the one source
+that asks you for a pattern.
+
+### Levels found automatically
+
+Anything used like a category becomes a level: a tag namespace or a property
+whose values repeat across at least three notes, with between two and forty
+distinct values, and where values genuinely recur rather than being unique per
+note.
+
+That last rule is what keeps the rail clean. A `uid` property is unique per
+note, so it is an identifier and never a level. A full timestamp is the same. A
+one-off tag namespace used twice is not worth a section yet. Obsidian's own keys
+— `title`, `aliases`, `tags`, `cssclasses` and friends — are never levels.
+
+**Settings → Cerebrum → Levels found** lists exactly what was discovered, with
+its source and how many notes carry it, so the automatic behaviour is never a
+mystery. Anything unwanted goes in **Hidden levels**, and the whole mechanism
+can be switched off with **Find levels automatically**.
+
+### Levels from folder paths
+
+Name the levels once and each becomes a filter of its own:
 
 ```
 raw/<year>/<subject>/<unit>
 wiki/<year>/<subject>/<unit>
 ```
 
-Put those in **Settings → Cerebrum → Level patterns**, or press **Detect** to
-have Cerebrum read your folders and suggest one pattern per top level tree,
-which you then rename to taste.
+Put those in **Settings → Cerebrum → Folder level patterns**, or press
+**Detect folder levels** to have Cerebrum read your folders and suggest one
+pattern per top level tree, which you then rename to taste.
 
-From then on the rail grows a section per level. Picking **2026** narrows the
+### Using them
+
+The rail grows a section per level. Picking **2026** narrows the
 subject list to the subjects taught that year; picking **physics** narrows the
 units to the ones that subject has. Every active filter appears as a chip above
 the toolbar and can be removed on its own. The filters are independent of where
 you are browsing, so *physics* alone gathers the subject across `raw/`, `wiki/`
 and any other tree at once — the thing the folder hierarchy cannot do.
+
+A note can sit in several values of one level at the same time, because tags and
+list properties are naturally plural: a note tagged `#subject/physics` and
+`#subject/maths` is counted and filtered under both.
 
 **Group by** gains an entry per level, and cards show their level values instead
 of a raw path. Clicking a value on a card filters to it.
@@ -146,6 +186,9 @@ Patterns are tried in order and the first one that matches wins.
 
 ### What happens when the vault does not fit
 
+Paths are the source with edge cases, since a pattern makes a claim about shape.
+Tags and properties have none: a note either carries one or it does not.
+
 These are the cases worth knowing, all of which resolve without you doing
 anything:
 
@@ -160,8 +203,13 @@ anything:
 | A note that belongs somewhere it does not live | Same: frontmatter wins, so it can sit in `inbox/` and still file under a subject |
 
 Level names are yours. Year, subject and unit suit a course; topic, project and
-stage suit other work. Cerebrum only treats one name specially: a level whose
-values look like years sorts newest first everywhere it appears.
+stage suit other work; a tag namespace or property is named by whatever you
+already called it. Cerebrum treats only one name specially: a level whose values
+look like years sorts newest first everywhere it appears.
+
+When a path level and a property share a name, the property wins for that note —
+the escape hatch for something filed where its path does not describe it. A tag
+namespace of the same name adds its values instead of replacing them.
 
 ## The graph
 

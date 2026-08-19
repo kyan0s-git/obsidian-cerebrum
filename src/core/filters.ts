@@ -91,8 +91,14 @@ export function groupNotes(notes: NoteEntry[], key: GroupKey): NoteGroup[] {
 
 	for (const note of notes) {
 		if (facet !== null) {
-			const value = note.facets[facet];
-			push(value ?? '', value ?? `No ${facet}`, note);
+			const values = note.facets[facet] ?? [];
+			if (values.length === 0) {
+				push('', `No ${facet}`, note);
+			} else {
+				for (const value of values) {
+					push(value, value, note);
+				}
+			}
 			continue;
 		}
 		switch (key) {

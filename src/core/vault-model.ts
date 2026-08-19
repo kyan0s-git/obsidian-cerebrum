@@ -8,13 +8,15 @@ import {
 } from 'obsidian';
 import { NOTE_EXTENSIONS } from '../constants';
 import {
+	FacetCandidateSource,
 	FacetCount,
+	FacetDefinition,
 	FacetRule,
-	FacetValues,
 	countValues,
-	facetNames,
+	discoverFacets,
 	facetsForNote,
 	parseRules,
+	patternNames,
 } from './facets';
 import type { CerebrumSettings } from '../settings';
 import type {
@@ -39,6 +41,9 @@ export class VaultModel {
 	private tagCounts = new Map<string, number>();
 	private rules: FacetRule[] = [];
 	private facetOrder: string[] = [];
+	private discovered: FacetDefinition[] = [];
+	/** Tags and frontmatter per note, kept only while a rebuild is running. */
+	private candidates = new Map<string, FacetCandidateSource>();
 	private unresolved = new Map<string, UnresolvedEntry>();
 	private listeners = new Set<() => void>();
 	private built = false;
@@ -62,9 +67,9 @@ export class VaultModel {
 		this.unresolved.clear();
 
 		this.rules = parseRules(this.settings().facetPatterns);
-		this.facetOrder = facetNames(this.rules);
 		this.indexFolders();
 		this.indexFiles();
+		this.indexFacets();
 		this.indexLinks();
 		this.built = true;
 
@@ -149,9 +154,14 @@ export class VaultModel {
 			.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 	}
 
-	/** Facet names in the order their patterns declare them. */
+	/** Level names: the ones patterns declare, then the ones discovered. */
 	getFacetNames(): string[] {
 		return [...this.facetOrder];
+	}
+
+	/** Where each level came from, for the settings interface. */
+	getFacetDefinitions(): FacetDefinition[] {
+		return [...this.discovered];
 	}
 
 	/**
@@ -161,7 +171,7 @@ export class VaultModel {
 	getFacetValues(
 		notes: NoteEntry[],
 		name: string,
-		filters: FacetValues,
+		filters: Record<string, string>,
 	): FacetCount[] {
 		return countValues(notes, name, filters);
 	}
@@ -283,7 +293,8 @@ export class VaultModel {
 		const cache = this.app.metadataCache.getFileCache(file);
 		const folder = file.parent && !file.parent.isRoot() ? file.parent.path : '';
 		const frontmatter: Record<string, unknown> | undefined = cache?.frontmatter;
-		const folders = folder === '' ? [] : folder.split('/');
+		const tags = cache ? (getAllTags(cache) ?? []) : [];
+		this.candidates.set(file.path, { tags, frontmatter });
 		return {
 			path: file.path,
 			basename: file.basename,
@@ -293,14 +304,9 @@ export class VaultModel {
 			title: readString(frontmatter, ['title']) ?? file.basename,
 			summary:
 				readString(frontmatter, ['description', 'summary', 'abstract']) ?? '',
-			tags: cache ? (getAllTags(cache) ?? []) : [],
+			tags,
 			aliases: readStringList(frontmatter, 'aliases'),
-			facets: facetsForNote(
-				folders,
-				frontmatter,
-				this.rules,
-				this.facetOrder,
-			),
+			facets: {},
 			created: file.stat.ctime,
 			modified: file.stat.mtime,
 			size: file.stat.size,
@@ -308,6 +314,46 @@ export class VaultModel {
 			outgoing: [],
 			incoming: [],
 		};
+	}
+
+	/**
+	 * Levels are decided from the whole vault, then applied to every note: a
+	 * property only becomes a level once enough notes share its values, which
+	 * cannot be known one note at a time.
+	 */
+	private indexFacets(): void {
+		const settings = this.settings();
+		this.facetOrder = patternNames(this.rules);
+		this.discovered = settings.autoFacets
+			? discoverFacets(Array.from(this.candidates.values()), {
+					exclude: [...this.facetOrder, ...settings.hiddenFacets],
+				})
+			: [];
+		for (const definition of this.discovered) {
+			if (!this.facetOrder.includes(definition.name)) {
+				this.facetOrder.push(definition.name);
+			}
+		}
+
+		const hidden = new Set(
+			settings.hiddenFacets.map((name) => name.trim().toLowerCase()),
+		);
+		this.facetOrder = this.facetOrder.filter((name) => !hidden.has(name));
+
+		for (const entry of this.notes.values()) {
+			const candidate = this.candidates.get(entry.path);
+			if (!candidate) {
+				continue;
+			}
+			const folders = entry.folder === '' ? [] : entry.folder.split('/');
+			entry.facets = facetsForNote(
+				folders,
+				candidate,
+				this.rules,
+				this.discovered,
+			);
+		}
+		this.candidates.clear();
 	}
 
 	private indexLinks(): void {

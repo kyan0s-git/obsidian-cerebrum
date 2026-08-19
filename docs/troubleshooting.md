@@ -55,10 +55,17 @@ Giving a note a `description` in frontmatter always wins over reading the body.
 
 ## A level is missing, or a note is filed under the wrong one
 
-Check the pattern for that tree in **Settings → Cerebrum → Level patterns**:
+**Settings → Cerebrum → Levels found** lists what was discovered and from where;
+start there. If what you expect is not listed:
 
-- **No level sections in the rail at all** — no patterns are configured. Press
-  **Detect** to start from your existing folders.
+- **A tag or property is not becoming a level** — it needs at least three notes,
+  at least two distinct values, and values that repeat. A property that is
+  unique per note, like an id or a full timestamp, is deliberately excluded, as
+  are Obsidian's own keys such as `title` and `aliases`.
+- **A level you do not want keeps appearing** — add its name to **Hidden
+  levels**, or turn off **Find levels automatically**.
+- **No level sections at all and you organise by folders** — folders need a
+  pattern. Press **Detect folder levels** to start from what you already have.
 - **A whole tree has no levels** — no pattern matches it. Patterns are tried in
   order and literals must match the folder name, so `raw/<year>` will not match
   `Raw Notes/2026`. Add a line for that tree.
@@ -67,7 +74,9 @@ Check the pattern for that tree in **Settings → Cerebrum → Level patterns**:
 - **One note is wrong** — give it the level in its own frontmatter, for example
   `subject: physics`, which overrides the path.
 
-Level changes rebuild the index, so they take effect as soon as you stop typing.
+For folder levels specifically, check the pattern for that tree under **Folder
+level patterns**. All level settings rebuild the index, so they take effect as
+soon as you stop typing.
 
 ## A link is not showing in the graph
 
@@ -112,13 +121,14 @@ variables without triggering it can leave stale colours; reopen the graph tab.
 Values are validated on load: anything of the wrong type falls back to its
 default rather than being trusted. If you hand-edited `data.json`, check the
 types against the reference in [settings](settings.md#what-the-file-looks-like) —
-`recentDays` is a number, `excludedFolders` and `facetPatterns` are arrays of
-strings.
+`recentDays` is a number; `excludedFolders`, `facetPatterns` and `hiddenFacets`
+are arrays of strings.
 
 ## Reporting something else
 
-Open an issue with your Obsidian version, your platform, the plugin version from
-`manifest.json`, and what the console says — **Ctrl/Cmd + Shift + I**, Console
+Open an issue with your Obsidian version, your platform, the build string from
+**Settings → Cerebrum → Build** (there is a copy button), and what the console
+says — **Ctrl/Cmd + Shift + I**, Console
 tab. If it involves specific notes, the shape of the links matters more than the
 content: which of link, embed or frontmatter link, and whether the target
 exists.

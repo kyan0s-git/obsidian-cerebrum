@@ -24,8 +24,8 @@ export interface NoteEntry {
 	summary: string;
 	tags: string[];
 	aliases: string[];
-	/** Facet values derived from the note's path and frontmatter. */
-	facets: Record<string, string>;
+	/** Level values, from the path, nested tags and frontmatter properties. */
+	facets: Record<string, string[]>;
 	created: number;
 	modified: number;
 	size: number;

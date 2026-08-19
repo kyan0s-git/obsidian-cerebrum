@@ -20,10 +20,13 @@ Open it from the ribbon (**Browse the vault**) or the command palette.
   layout: all notes, recently edited, link hubs (what the vault points at most),
   orphans (nothing in, nothing out), and missing pages (links written for notes
   that do not exist yet, with the pages asking for them).
-- **Levels** — name your folder levels once, as `raw/<year>/<subject>/<unit>`,
-  and each becomes a filter of its own: one click for every physics note of
-  2026, across `raw/`, `wiki/` and anywhere else it lives. Levels narrow each
-  other as you pick them, group the results, and label the cards.
+- **Levels** — the dimensions your vault already has, turned into filters.
+  Nested tags (`#status/active`) and frontmatter properties (`type: reference`)
+  are found automatically, with no configuration at all; folder levels take one
+  pattern, `raw/<year>/<subject>/<unit>`. Either way each level becomes a filter
+  of its own: one click for every physics note of 2026, across `raw/`, `wiki/`
+  and anywhere else it lives. Levels narrow each other as you pick them, group
+  the results, and label the cards.
 - **Tags** — every tag in the vault with its note count, as a one-click filter.
 - **Cards** show the title, the folder, an excerpt pulled from the note itself,
   tags, the last edit, and how many links point in and out. A list layout is a

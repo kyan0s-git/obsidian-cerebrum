@@ -205,12 +205,12 @@ function renderCardPath(
 	ctx: ExplorerContext,
 	note: NoteEntry,
 ): void {
-	const names = ctx.model.getFacetNames();
-	const values = names
-		.map((name) => ({ name, value: note.facets[name] }))
-		.filter((entry): entry is { name: string; value: string } =>
-			entry.value !== undefined,
-		);
+	const values: { name: string; value: string }[] = [];
+	for (const name of ctx.model.getFacetNames()) {
+		for (const value of note.facets[name] ?? []) {
+			values.push({ name, value });
+		}
+	}
 	if (values.length === 0) {
 		card.createDiv({ cls: 'cerebrum-card-path', text: formatFolder(note.folder) });
 		return;
