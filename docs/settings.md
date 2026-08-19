@@ -15,11 +15,10 @@ each one is.
 | Show excerpts on cards | on | Settings | Reads the first lines of a note for the card preview. Turning it off stops Cerebrum reading note bodies at all |
 | Include notes from subfolders | off | Settings | Off, a space shows only what sits directly in it. On, it shows everything nested below |
 | Show attachments | off | Settings | Includes images, audio, PDFs and other non-note files in the browser. Folder counts stay note-only either way |
-| Recently edited window | 14 days | Settings | How far back the *Recently edited* collection reaches. 1–90 |
 | Hidden folders | empty | Settings | One folder path per line. Everything inside is excluded from both views, from counts, and from link resolution, so a link into a hidden folder is reported as missing |
 | Layout | cards | Browser toolbar | Cards or list |
-| Sort key and direction | last modified, descending | Browser toolbar | Modified, created, title or link count |
-| Grouping | none | Browser toolbar | None, folder, space, tag or date |
+| Sort | newest first | Browser toolbar | Newest, oldest, title A–Z, title Z–A, most linked. Direction is part of the option |
+| Grouping | none | Browser toolbar | None, folder, date, or any level |
 
 Hidden folders are matched by path prefix, so `archive` hides `archive` and
 `archive/2019/notes.md` but not `archived-ideas`. Leading and trailing slashes
@@ -77,13 +76,11 @@ it. Values much above `0.2` compress the whole graph into the centre.
 {
   "openInNewTab": false,
   "viewMode": "cards",
-  "sortKey": "modified",
-  "sortDescending": true,
+  "sortKey": "newest",
   "groupKey": "none",
   "showExcerpts": true,
   "showAttachments": false,
   "showSubfolderContents": false,
-  "recentDays": 14,
   "excludedFolders": [],
   "facetPatterns": [],
   "autoFacets": true,

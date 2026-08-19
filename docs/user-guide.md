@@ -33,16 +33,17 @@ middle.
 
 ### The rail
 
-**Collections** choose which set of notes you are looking at, computed from the
-link structure rather than the folder layout:
+**Vault** holds the three views a sort cannot produce:
 
-| Collection | Contains |
+| View | Contains |
 | --- | --- |
 | All notes | Everything indexed |
-| Recently edited | Notes modified inside the recent window (14 days by default) |
-| Link hubs | Notes with incoming links, most linked first |
 | Orphans | Notes with no links in and no resolved links out |
 | Missing pages | Link targets that have no note behind them, with the pages referencing them |
+
+"Recently edited" and "most linked" are not here, because each was only the
+whole vault in a different order: pick **Newest first** or **Most linked** in
+the sort control instead.
 
 **Levels** come next, one section each — see [levels](#levels) below. Where a
 collection chooses the set, levels refine it: each lists its values with counts,
@@ -54,18 +55,18 @@ drilling down. The count beside a folder is the number of notes in it and
 everything below it; attachments are not counted. A **Vault root** entry appears
 above the folders when notes are stored loose at the root.
 
-**Tags** lists the 24 most used tags with their counts. Clicking one filters to
-notes carrying it.
+**Tags** lists the 24 most used tags with their counts. A nested tag that
+already became a level is left out, since its section above is the same filter.
 
 ### The toolbar
 
 - **Search** matches titles, paths, tags and aliases using Obsidian's own fuzzy
   matcher, best matches first. In vaults over 3,000 notes it narrows to titles
   and paths to keep typing responsive.
-- **Sort** by last modified, date created, title or link count, with a separate
-  ascending/descending toggle.
-- **Group** by folder, space, tag or date. Grouping by tag puts a note into
-  every tag it carries.
+- **Sort**: newest first, oldest first, title A to Z, title Z to A, or most
+  linked. Each option states its own direction, so there is no separate toggle
+  to reason about.
+- **Group** by folder, by date, or by any level.
 - **Layout** switches between cards and a denser list. Excerpts appear on cards
   only.
 - **Graph** (fork icon) opens the graph filtered to the current selection.

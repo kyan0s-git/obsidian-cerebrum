@@ -43,27 +43,23 @@ export function searchNotes(notes: NoteEntry[], query: string): NoteEntry[] {
 	return scored.map((entry) => entry.note);
 }
 
-export function sortNotes(
-	notes: NoteEntry[],
-	key: SortKey,
-	descending: boolean,
-): NoteEntry[] {
-	const direction = descending ? -1 : 1;
+export function sortNotes(notes: NoteEntry[], key: SortKey): NoteEntry[] {
 	const sorted = [...notes];
 	sorted.sort((a, b) => {
 		switch (key) {
-			case 'name':
-				return a.title.localeCompare(b.title) * direction;
-			case 'created':
-				return (a.created - b.created) * direction;
+			case 'oldest':
+				return a.modified - b.modified;
+			case 'title':
+				return a.title.localeCompare(b.title);
+			case 'title-desc':
+				return b.title.localeCompare(a.title);
 			case 'links':
 				return (
-					(linkWeight(a) - linkWeight(b)) * direction ||
-					a.title.localeCompare(b.title)
+					linkWeight(b) - linkWeight(a) || a.title.localeCompare(b.title)
 				);
-			case 'modified':
+			case 'newest':
 			default:
-				return (a.modified - b.modified) * direction;
+				return b.modified - a.modified;
 		}
 	});
 	return sorted;
@@ -104,18 +100,6 @@ export function groupNotes(notes: NoteEntry[], key: GroupKey): NoteGroup[] {
 		switch (key) {
 			case 'folder':
 				push(note.folder, note.folder === '' ? 'Vault root' : note.folder, note);
-				break;
-			case 'space':
-				push(note.space, note.space === '' ? 'Vault root' : note.space, note);
-				break;
-			case 'tag':
-				if (note.tags.length === 0) {
-					push('', 'Untagged', note);
-				} else {
-					for (const tag of note.tags) {
-						push(tag, tag, note);
-					}
-				}
 				break;
 			case 'modified':
 			default: {

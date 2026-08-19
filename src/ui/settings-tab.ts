@@ -65,20 +65,6 @@ export class CerebrumSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Recently edited window')
-			.setDesc('How many days back the recently edited collection reaches.')
-			.addSlider((slider) =>
-				slider
-					.setLimits(1, 90, 1)
-					.setValue(settings.recentDays)
-					.setDynamicTooltip()
-					.onChange((value) => {
-						settings.recentDays = value;
-						save();
-					}),
-			);
-
-		new Setting(containerEl)
 			.setName('Hidden folders')
 			.setDesc(
 				'One folder path per line. Everything inside them is left out of both views.',

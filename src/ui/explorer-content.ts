@@ -47,11 +47,7 @@ export function renderContent(
 
 	const faceted = applyFacets(collection.notes, ctx.state.facets);
 	const filtered = searchNotes(faceted, ctx.state.query);
-	const sorted = sortNotes(
-		filtered,
-		ctx.settings.sortKey,
-		ctx.settings.sortDescending,
-	);
+	const sorted = sortNotes(filtered, ctx.settings.sortKey);
 
 	intro
 		.createDiv({ cls: 'cerebrum-intro-count' })

@@ -56,17 +56,16 @@ export interface UnresolvedEntry {
 }
 
 export type ViewMode = 'cards' | 'list';
-export type SortKey = 'modified' | 'created' | 'name' | 'links';
-export type GroupKey =
-	| 'none'
-	| 'folder'
-	| 'space'
-	| 'tag'
-	| 'modified'
-	| `facet:${string}`;
 
-/** Built in collections that do not map to a single folder. */
-export type SmartListId = 'all' | 'recent' | 'hubs' | 'orphans' | 'unresolved';
+/** Sort options carry their own direction, so there is no separate toggle. */
+export type SortKey = 'newest' | 'oldest' | 'title' | 'title-desc' | 'links';
+export type GroupKey = 'none' | 'folder' | 'modified' | `facet:${string}`;
+
+/**
+ * The views that cannot be reached by sorting or filtering. Anything a sort
+ * already answers is not a collection.
+ */
+export type SmartListId = 'all' | 'orphans' | 'unresolved';
 
 /** What the explorer is currently showing. */
 export type Selection =

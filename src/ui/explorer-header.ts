@@ -6,17 +6,16 @@ import { openGraph } from './view-actions';
 import { SMART_LISTS } from './collections';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-	{ value: 'modified', label: 'Last modified' },
-	{ value: 'created', label: 'Date created' },
-	{ value: 'name', label: 'Title' },
-	{ value: 'links', label: 'Link count' },
+	{ value: 'newest', label: 'Newest first' },
+	{ value: 'oldest', label: 'Oldest first' },
+	{ value: 'title', label: 'Title A to Z' },
+	{ value: 'title-desc', label: 'Title Z to A' },
+	{ value: 'links', label: 'Most linked' },
 ];
 
 const GROUP_OPTIONS: { value: GroupKey; label: string }[] = [
 	{ value: 'none', label: 'No grouping' },
 	{ value: 'folder', label: 'Group by folder' },
-	{ value: 'space', label: 'Group by space' },
-	{ value: 'tag', label: 'Group by tag' },
 	{ value: 'modified', label: 'Group by date' },
 ];
 
@@ -47,7 +46,6 @@ export function renderHeader(container: HTMLElement, ctx: ExplorerContext): void
 			ctx.persist();
 		},
 	);
-	renderDirectionToggle(toolbar, ctx);
 	renderSelect(
 		toolbar,
 		groupOptions(ctx),
@@ -178,20 +176,6 @@ function renderSelect<T extends string>(
 		if (chosen) {
 			onChange(chosen.value);
 		}
-	});
-}
-
-function renderDirectionToggle(
-	toolbar: HTMLElement,
-	ctx: ExplorerContext,
-): void {
-	const button = toolbar.createEl('button', { cls: 'clickable-icon' });
-	const descending = ctx.settings.sortDescending;
-	setIcon(button, descending ? 'arrow-down-wide-narrow' : 'arrow-up-narrow-wide');
-	setTooltip(button, descending ? 'Sort descending' : 'Sort ascending');
-	button.addEventListener('click', () => {
-		ctx.settings.sortDescending = !ctx.settings.sortDescending;
-		ctx.persist();
 	});
 }
 

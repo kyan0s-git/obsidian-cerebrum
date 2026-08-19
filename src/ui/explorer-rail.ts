@@ -2,6 +2,7 @@ import { setIcon } from 'obsidian';
 import type { FolderEntry, Selection } from '../types';
 import { colorFor } from '../utils/palette';
 import { shortTag } from '../utils/format';
+import { splitTag } from '../core/facets';
 import { SMART_LISTS, countForSmartList, resolveCollection } from './collections';
 import type { ExplorerContext } from './explorer-view';
 
@@ -15,7 +16,7 @@ const MAX_FACET_VALUES = 12;
 export function renderRail(container: HTMLElement, ctx: ExplorerContext): void {
 	container.empty();
 
-	const collections = section(container, 'Collections');
+	const collections = section(container, 'Vault');
 	for (const list of SMART_LISTS) {
 		railItem(collections, {
 			label: list.label,
@@ -66,7 +67,12 @@ export function renderRail(container: HTMLElement, ctx: ExplorerContext): void {
 		});
 	}
 
-	const tags = ctx.model.getTags();
+	// A nested tag that became a level is already a section above; listing it
+	// here as well would be the same filter twice under two different names.
+	const levels = new Set(ctx.model.getFacetNames());
+	const tags = ctx.model
+		.getTags()
+		.filter((entry) => !levels.has(splitTag(entry.tag)?.name ?? ''));
 	if (tags.length > 0) {
 		const tagSection = section(container, 'Tags');
 		for (const entry of tags.slice(0, MAX_TAGS)) {

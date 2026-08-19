@@ -16,10 +16,9 @@ Open it from the ribbon (**Browse the vault**) or the command palette.
 - **Spaces** — every folder in the vault, discovered at runtime. The rail lists
   the top level, then unfolds the branch you are browsing so you never lose the
   rest of the vault while drilling down.
-- **Collections** — computed from the link structure rather than the folder
-  layout: all notes, recently edited, link hubs (what the vault points at most),
-  orphans (nothing in, nothing out), and missing pages (links written for notes
-  that do not exist yet, with the pages asking for them).
+- **Vault** — the three views a sort cannot produce: all notes, orphans
+  (nothing in, nothing out), and missing pages (links written for notes that do
+  not exist yet, with the pages asking for them).
 - **Levels** — the dimensions your vault already has, turned into filters.
   Nested tags (`#status/active`) and frontmatter properties (`type: reference`)
   are found automatically, with no configuration at all; folder levels take one
@@ -32,7 +31,8 @@ Open it from the ribbon (**Browse the vault**) or the command palette.
   tags, the last edit, and how many links point in and out. A list layout is a
   click away when you want density instead.
 - Search runs over titles, paths, tags and aliases with Obsidian's own fuzzy
-  matcher, with sorting and grouping beside it.
+  matcher. Beside it sit one sort control, whose options carry their own
+  direction, and one grouping control. That is the whole toolbar.
 
 ## The graph
 

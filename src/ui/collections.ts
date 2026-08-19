@@ -18,27 +18,16 @@ export interface SmartList {
 }
 
 /**
- * Collections that are computed from the link structure rather than the folder
- * layout. They stay meaningful no matter how the vault is organised.
+ * The views a sort cannot produce. "Recently edited" and "most linked" used to
+ * live here too, but each was only the whole vault in a different order, which
+ * is what the sort control is for.
  */
 export const SMART_LISTS: SmartList[] = [
 	{
 		id: 'all',
 		label: 'All notes',
 		icon: 'library',
-		description: 'Everything in the vault, newest first.',
-	},
-	{
-		id: 'recent',
-		label: 'Recently edited',
-		icon: 'history',
-		description: 'Notes touched in the last few days.',
-	},
-	{
-		id: 'hubs',
-		label: 'Link hubs',
-		icon: 'network',
-		description: 'The notes the rest of the vault points at most.',
+		description: 'Everything in the vault.',
 	},
 	{
 		id: 'orphans',
@@ -129,17 +118,6 @@ export function resolveCollection(
 	};
 
 	switch (selection.value) {
-		case 'recent': {
-			const cutoff = Date.now() - settings.recentDays * 24 * 60 * 60 * 1000;
-			return {
-				...base,
-				notes: visible(model.getAllNotes(), settings)
-					.filter((note) => note.modified >= cutoff)
-					.sort((a, b) => b.modified - a.modified),
-			};
-		}
-		case 'hubs':
-			return { ...base, notes: visible(model.getHubs(), settings) };
 		case 'orphans':
 			return { ...base, notes: model.getOrphans() };
 		case 'unresolved':
@@ -157,14 +135,6 @@ export function countForSmartList(
 	id: SmartListId,
 ): number {
 	switch (id) {
-		case 'recent': {
-			const cutoff = Date.now() - settings.recentDays * 24 * 60 * 60 * 1000;
-			return visible(model.getAllNotes(), settings).filter(
-				(note) => note.modified >= cutoff,
-			).length;
-		}
-		case 'hubs':
-			return visible(model.getHubs(), settings).length;
 		case 'orphans':
 			return model.getOrphans().length;
 		case 'unresolved':

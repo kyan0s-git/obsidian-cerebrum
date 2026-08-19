@@ -121,8 +121,7 @@ variables without triggering it can leave stale colours; reopen the graph tab.
 Values are validated on load: anything of the wrong type falls back to its
 default rather than being trusted. If you hand-edited `data.json`, check the
 types against the reference in [settings](settings.md#what-the-file-looks-like) —
-`recentDays` is a number; `excludedFolders`, `facetPatterns` and `hiddenFacets`
-are arrays of strings.
+`excludedFolders`, `facetPatterns` and `hiddenFacets` are arrays of strings.
 
 ## Reporting something else
 

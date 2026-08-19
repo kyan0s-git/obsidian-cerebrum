@@ -205,13 +205,7 @@ export class ExplorerView extends ItemView {
 	}
 }
 
-const SMART_IDS: SmartListId[] = [
-	'all',
-	'recent',
-	'hubs',
-	'orphans',
-	'unresolved',
-];
+const SMART_IDS: SmartListId[] = ['all', 'orphans', 'unresolved'];
 
 function isSmartId(value: string): value is SmartListId {
 	return SMART_IDS.some((id) => id === value);

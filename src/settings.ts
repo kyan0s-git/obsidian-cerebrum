@@ -5,12 +5,10 @@ export interface CerebrumSettings {
 	openInNewTab: boolean;
 	viewMode: ViewMode;
 	sortKey: SortKey;
-	sortDescending: boolean;
 	groupKey: GroupKey;
 	showExcerpts: boolean;
 	showAttachments: boolean;
 	showSubfolderContents: boolean;
-	recentDays: number;
 	/** Folder paths hidden from every view, one per line. */
 	excludedFolders: string[];
 	/** Patterns naming the folder levels, one per line. */
@@ -38,13 +36,11 @@ export interface CerebrumSettings {
 export const DEFAULT_SETTINGS: CerebrumSettings = {
 	openInNewTab: false,
 	viewMode: 'cards',
-	sortKey: 'modified',
-	sortDescending: true,
+	sortKey: 'newest',
 	groupKey: 'none',
 	showExcerpts: true,
 	showAttachments: false,
 	showSubfolderContents: false,
-	recentDays: 14,
 	excludedFolders: [],
 	facetPatterns: [],
 	autoFacets: true,
