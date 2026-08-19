@@ -102,8 +102,16 @@ jobs:
               env:
                   VERSION: ${{ steps.version.outputs.version }}
               run: |
-                  if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
-                      echo "Tag $VERSION already exists, leaving it alone."
+                  existing="$(git ls-remote --tags origin "refs/tags/$VERSION" | cut -f1)"
+                  if [ -n "$existing" ]; then
+                      # An existing tag on another commit means this build is not
+                      # what that version stands for. Releasing it would put code
+                      # behind a tag that never contained it.
+                      if [ "$existing" != "$GITHUB_SHA" ]; then
+                          echo "::error::Tag $VERSION already exists at $existing, but this build is $GITHUB_SHA. Bump the version."
+                          exit 1
+                      fi
+                      echo "Tag $VERSION already points here."
                       exit 0
                   fi
                   git config user.name "github-actions[bot]"
@@ -128,11 +136,12 @@ jobs:
                       [ "${{ inputs.prerelease }}" = "true" ] && prerelease_flag="--prerelease"
                   fi
 
+                  # A published release is a fixed artifact. Replacing its files
+                  # with a later build would silently change what a version
+                  # means, so a version that already exists is an error.
                   if gh release view "$VERSION" >/dev/null 2>&1; then
-                      echo "::notice::Release $VERSION already exists, uploading assets to it."
-                      gh release upload "$VERSION" --clobber \
-                        main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
-                      exit 0
+                      echo "::error::Release $VERSION already exists. Bump the version in manifest.json instead of overwriting it."
+                      exit 1
                   fi
 
                   notes="$(cat <<EOF

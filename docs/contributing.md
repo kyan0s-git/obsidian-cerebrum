@@ -129,8 +129,14 @@ mistaken for a release.
    for you to review and publish.
 
 Either path attests build provenance and attaches `main.js`, `manifest.json` and
-`styles.css`. The workflow refuses to run if the version is not a plain `x.y.z`
-or does not match `manifest.json`, so a mismatched tag fails loudly instead of
-producing a release Obsidian will not install.
+`styles.css`. The workflow refuses, loudly, to produce a release that would not
+mean what it says:
+
+- a version that is not a plain `x.y.z`, which Obsidian will not install;
+- a version that does not match `manifest.json`;
+- a tag that already exists on a different commit, which would put code behind a
+  version that never contained it;
+- a version that already has a release, because replacing a published artifact
+  silently changes what that version means. Bump instead.
 
 `main.js` is gitignored on purpose: it is a release artifact, not source.
