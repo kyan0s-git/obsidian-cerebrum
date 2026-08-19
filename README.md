@@ -21,14 +21,11 @@ Open it from the ribbon (**Browse the vault**) or the command palette.
   orphans (nothing in, nothing out), and missing pages (links written for notes
   that do not exist yet, with the pages asking for them).
 - **Tags** — every tag in the vault with its note count, as a one-click filter.
-- **Cards** show the title (frontmatter `title` wins), the folder, an excerpt
-  pulled from the note itself (or its `description`/`summary` frontmatter), tags,
-  the last edit, and how many links point in and out. A list layout is a click
-  away when you want density instead.
+- **Cards** show the title, the folder, an excerpt pulled from the note itself,
+  tags, the last edit, and how many links point in and out. A list layout is a
+  click away when you want density instead.
 - Search runs over titles, paths, tags and aliases with Obsidian's own fuzzy
-  matcher. Sorting and grouping (by folder, space, tag or date) sit next to it.
-- Click opens, `Ctrl`/`Cmd`-click opens a tab, middle click opens a tab, right
-  click gives the normal file menu with everything your other plugins add to it.
+  matcher, with sorting and grouping beside it.
 
 ## The graph
 
@@ -39,25 +36,35 @@ The graph is built from each page's own references rather than a summarised link
 table, so it shows what is actually written:
 
 - **Inline links, embeds and frontmatter links** are all drawn, each with its own
-  line style, in the direction they were written. Mutual links are marked.
+  line style, in the direction they were written.
 - **Links to pages that do not exist yet** become hollow ghost nodes — clicking
-  one creates and opens the note the way any other unresolved link does.
+  one creates and opens the note.
 - **Node size** follows how many links touch a page; **node colour** follows its
   top level folder, with a legend that updates as the vault changes.
 - **Local graph mode** follows the active note at a depth you choose, and the
-  filter box narrows the graph to matching paths, titles or tags — links to
-  pages outside the filter are left out rather than dragging them back in.
-- Drag to pin a node, drag the background to pan, scroll to zoom, double click to
-  re-centre the graph on a page. Layout is a Barnes-Hut force simulation that
-  stops as soon as it settles, so an idle graph costs nothing.
+  filter narrows the graph to matching paths, titles or tags.
+- Drag to pin, scroll to zoom, double click to re-centre. The Barnes-Hut force
+  layout stops as soon as it settles, so an idle graph costs nothing.
 
-## Settings
+## Install
 
-**Settings → Community plugins → Cerebrum** covers excerpts, whether spaces
-include nested notes, attachments, the recent window, hidden folders, and the
-graph's node limit and force strengths.
+Copy `main.js`, `manifest.json` and `styles.css` from a release into
+`<YourVault>/.obsidian/plugins/cerebrum/`, then enable **Cerebrum** in
+**Settings → Community plugins**. Requires Obsidian 1.7.2 or later.
 
-Hidden folders are matched by path prefix, one per line, and apply to both views.
+Full instructions, including building from source and developing against a live
+vault, are in [docs/installation.md](docs/installation.md).
+
+## Documentation
+
+| Page | What it covers |
+| --- | --- |
+| [Installation](docs/installation.md) | Release install, source build, dev setup |
+| [User guide](docs/user-guide.md) | Both views, commands, every interaction |
+| [Settings](docs/settings.md) | Every setting, default and effect |
+| [Architecture](docs/architecture.md) | Index, graph building, layout, rendering |
+| [Contributing](docs/contributing.md) | Workflow, conventions, linting, releases |
+| [Troubleshooting](docs/troubleshooting.md) | What to check when something looks wrong |
 
 ## Everything stays local
 
@@ -73,28 +80,6 @@ npm run dev     # watch build into main.js
 npm run build   # typecheck, then a production bundle
 npm run lint    # Obsidian's own ESLint plugin
 ```
-
-Source layout:
-
-```
-src/
-  main.ts                 plugin lifecycle: views, commands, events
-  settings.ts             settings shape, defaults and safe merging
-  constants.ts, types.ts
-  core/
-    vault-model.ts        the index: folders, notes, tags, links, backlinks
-    link-graph.ts         nodes and edges, local graphs, ghosts, filters
-    filters.ts            search, sorting, grouping
-    excerpts.ts           lazy note previews
-  ui/
-    explorer-*.ts         the content browser
-    graph-*.ts            the graph view, renderer and force simulation
-    settings-tab.ts, file-actions.ts, view-actions.ts, collections.ts
-  utils/                  formatting, icons, folder palette
-```
-
-To test a build by hand, copy `main.js`, `manifest.json` and `styles.css` into
-`<Vault>/.obsidian/plugins/cerebrum/` and reload Obsidian.
 
 ## Licence
 

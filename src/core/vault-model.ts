@@ -1,7 +1,6 @@
 import {
 	App,
 	CachedMetadata,
-	TAbstractFile,
 	TFile,
 	TFolder,
 	getAllTags,
@@ -173,11 +172,6 @@ export class VaultModel {
 			}
 		}
 		return false;
-	}
-
-	/** True when a vault event should trigger a rebuild. */
-	affectsIndex(file: TAbstractFile): boolean {
-		return !this.isExcluded(file.path);
 	}
 
 	private indexFolders(): void {
