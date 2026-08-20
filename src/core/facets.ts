@@ -77,7 +77,16 @@ const RESERVED_KEYS = new Set([
 	'icon',
 	'id',
 	'uid',
+	'created',
+	'updated',
+	'modified',
+	'date',
+	'datetime',
+	'timestamp',
 ]);
+
+/** A value that is a date is a point in time, not a category to browse by. */
+const DATE_VALUE = /^\d{4}-\d{2}-\d{2}([T ]|$)|^\d{2}[/-]\d{2}[/-]\d{4}$/;
 
 /** A level needs this many notes before it is worth showing. */
 const MIN_NOTES = 3;
@@ -88,7 +97,10 @@ const MAX_VALUE_RATIO = 0.75;
 /** Longer values are prose, not a category. */
 const MAX_VALUE_LENGTH = 40;
 /** Cap on discovered levels, so the rail cannot fill with noise. */
-const MAX_DISCOVERED = 6;
+const MAX_DISCOVERED = 4;
+
+/** Two levels agreeing on this share of notes are the same dimension twice. */
+const SAME_DIMENSION = 0.8;
 
 // ---------------------------------------------------------------- path levels
 
@@ -208,9 +220,10 @@ export function splitTag(tag: string): { name: string; value: string } | null {
 export function propertyValues(value: unknown): string[] {
 	if (typeof value === 'string') {
 		const trimmed = value.trim();
-		return trimmed === '' || trimmed.length > MAX_VALUE_LENGTH
-			? []
-			: [trimmed];
+		if (trimmed === '' || trimmed.length > MAX_VALUE_LENGTH) {
+			return [];
+		}
+		return DATE_VALUE.test(trimmed) ? [] : [trimmed];
 	}
 	if (typeof value === 'number' && Number.isFinite(value)) {
 		return [String(value)];
@@ -380,6 +393,67 @@ function propertyLookup(
 
 function unique(values: string[]): string[] {
 	return Array.from(new Set(values));
+}
+
+/**
+ * Drops levels that say the same thing as another one.
+ *
+ * A folder pattern and a property often describe one dimension in two
+ * vocabularies — `category` from a path and `class` from frontmatter, holding
+ * the same values for the same notes. Keeping both is the same filter listed
+ * twice. When two levels agree on what they put where, the one named by the
+ * user wins over one a pattern invented, and wider coverage breaks a tie.
+ */
+export function dedupeFacets(
+	definitions: FacetDefinition[],
+	notes: { facets: FacetValues }[],
+): FacetDefinition[] {
+	const kept: FacetDefinition[] = [];
+	for (const candidate of definitions) {
+		const twin = kept.find((existing) =>
+			sameDimension(existing.name, candidate.name, notes),
+		);
+		if (!twin) {
+			kept.push(candidate);
+			continue;
+		}
+		if (preferred(candidate, twin) === candidate) {
+			kept[kept.indexOf(twin)] = candidate;
+		}
+	}
+	return kept;
+}
+
+/** The level whose name came from the user, or failing that the wider one. */
+function preferred(a: FacetDefinition, b: FacetDefinition): FacetDefinition {
+	if (a.source !== 'path' && b.source === 'path') {
+		return a;
+	}
+	if (b.source !== 'path' && a.source === 'path') {
+		return b;
+	}
+	return a.coverage > b.coverage ? a : b;
+}
+
+function sameDimension(
+	left: string,
+	right: string,
+	notes: { facets: FacetValues }[],
+): boolean {
+	let both = 0;
+	let agreed = 0;
+	for (const note of notes) {
+		const a = note.facets[left];
+		const b = note.facets[right];
+		if (!a && !b) {
+			continue;
+		}
+		both++;
+		if (a && b && a.join('\u0000') === b.join('\u0000')) {
+			agreed++;
+		}
+	}
+	return both > 0 && agreed / both >= SAME_DIMENSION;
 }
 
 /** The first value of a level, for places that can only show one. */

@@ -128,18 +128,64 @@
 	background-color: var(--background-secondary);
 }
 
-.cerebrum-rail-section + .cerebrum-rail-section {
-	margin-top: var(--size-4-4);
-}
-
 .cerebrum-rail-title {
-	padding: 0 var(--size-2-3);
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	padding: var(--size-2-1) var(--size-2-2);
 	margin-bottom: var(--size-2-2);
+	border-radius: var(--radius-s);
 	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-semibold);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: var(--text-faint);
+	cursor: pointer;
+	user-select: none;
+}
+
+.cerebrum-rail-title:hover {
+	color: var(--text-muted);
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-rail-title.is-collapsed {
+	margin-bottom: 0;
+}
+
+.cerebrum-rail-caret {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+
+.cerebrum-rail-caret .svg-icon {
+	width: var(--icon-xs);
+	height: var(--icon-xs);
+}
+
+.cerebrum-rail-title-text {
+	flex: 1;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* The chosen value, so a closed section still says what it is doing. */
+.cerebrum-rail-summary {
+	max-width: 90px;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	padding: 0 var(--size-2-1);
+	border-radius: var(--radius-s);
+	background-color: var(--background-modifier-form-field);
+	color: var(--text-muted);
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+.cerebrum-rail-section + .cerebrum-rail-section {
+	margin-top: var(--size-2-2);
 }
 
 .cerebrum-rail-item {

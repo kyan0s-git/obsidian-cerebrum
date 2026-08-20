@@ -31,6 +31,7 @@ are ignored, and blank lines are dropped.
 | Find levels automatically | on | Settings | Discovers levels from nested tags (`#status/active`) and frontmatter properties used across several notes. Needs no configuration |
 | Levels found | — | Settings | Read-only: what discovery found, with each level's source and note count |
 | Hidden levels | empty | Settings | Level names to leave out of the views, one per line |
+| Open rail sections | Vault | Browser rail | Remembered as you open and close them. Everything else stays collapsed |
 | Folder level patterns | empty | Settings | One pattern per line naming the folder levels, such as `raw/<year>/<subject>/<unit>` |
 | Detect folder levels | — | Settings | Reads your folders and replaces the patterns with one suggestion per top level tree |
 

@@ -95,6 +95,13 @@ repeat rather than being unique per note. That last ratio is what excludes ids
 and timestamps, which are the two things that would otherwise flood the rail.
 The result is capped, so a messy vault cannot produce twenty sections.
 
+Two exclusions matter more than the thresholds. Dates are dropped by key and by
+value shape, because a timestamp repeats across notes often enough to pass every
+statistical test while being useless to browse by. And once every note has its
+values, `dedupeFacets` compares levels pairwise: two that assign the same values
+to the same notes are one dimension named twice, so the one the user named beats
+one a pattern invented, and the values are recomputed without the loser.
+
 Discovery has to see the whole vault before it can decide, which is why the
 index runs it as a separate pass: files are indexed first, holding each note's
 tags and frontmatter aside, then the levels are chosen, then every note's values

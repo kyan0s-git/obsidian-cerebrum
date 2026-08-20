@@ -13,6 +13,7 @@ import {
 	FacetDefinition,
 	FacetRule,
 	countValues,
+	dedupeFacets,
 	discoverFacets,
 	facetsForNote,
 	parseRules,
@@ -340,6 +341,30 @@ export class VaultModel {
 		);
 		this.facetOrder = this.facetOrder.filter((name) => !hidden.has(name));
 
+		this.applyFacets();
+
+		// Two levels holding the same values for the same notes are one
+		// dimension named twice, which can only be seen once every note has its
+		// values, so the pass runs again with the survivors.
+		const all = this.getAllNotes();
+		const declared: FacetDefinition[] = this.facetOrder.map((name) => ({
+			name,
+			source: this.discovered.find((d) => d.name === name)?.source ?? 'path',
+			coverage: all.filter((note) => (note.facets[name] ?? []).length > 0)
+				.length,
+		}));
+		const survivors = dedupeFacets(declared, all);
+		if (survivors.length !== declared.length) {
+			this.facetOrder = survivors.map((definition) => definition.name);
+			this.discovered = this.discovered.filter((definition) =>
+				survivors.some((s) => s.name === definition.name),
+			);
+			this.applyFacets();
+		}
+		this.candidates.clear();
+	}
+
+	private applyFacets(): void {
 		for (const entry of this.notes.values()) {
 			const candidate = this.candidates.get(entry.path);
 			if (!candidate) {
@@ -353,7 +378,6 @@ export class VaultModel {
 				this.discovered,
 			);
 		}
-		this.candidates.clear();
 	}
 
 	private indexLinks(): void {

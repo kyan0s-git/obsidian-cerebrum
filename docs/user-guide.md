@@ -46,8 +46,14 @@ whole vault in a different order: pick **Newest first** or **Most linked** in
 the sort control instead.
 
 **Levels** come next, one section each — see [levels](#levels) below. Where a
-collection chooses the set, levels refine it: each lists its values with counts,
-and picking one narrows the lists under it.
+view chooses the set, levels refine it: each lists its values with counts, and
+picking one narrows the lists under it.
+
+Every section past **Vault** is **collapsed until you open it**, and the choice
+is remembered. A vault with a dozen dimensions therefore reads as a dozen
+labelled rows, not a dozen lists at once. A level you are filtering by opens
+itself and shows the chosen value on its header, so a closed rail still says
+what it is doing.
 
 **Spaces** are your folders. The rail lists the top level, and unfolds the
 branch you are currently inside so you keep sight of the rest of the vault while
@@ -55,8 +61,9 @@ drilling down. The count beside a folder is the number of notes in it and
 everything below it; attachments are not counted. A **Vault root** entry appears
 above the folders when notes are stored loose at the root.
 
-**Tags** lists the 24 most used tags with their counts. A nested tag that
-already became a level is left out, since its section above is the same filter.
+**Folders** is your folder tree, and **Tags** lists the 24 most used tags. A
+nested tag that already became a level is left out, since its section above is
+the same filter.
 
 ### The toolbar
 
@@ -139,6 +146,14 @@ That last rule is what keeps the rail clean. A `uid` property is unique per
 note, so it is an identifier and never a level. A full timestamp is the same. A
 one-off tag namespace used twice is not worth a section yet. Obsidian's own keys
 — `title`, `aliases`, `tags`, `cssclasses` and friends — are never levels.
+
+Two things are deliberately never levels. **Dates** — a `created` or `updated`
+property, or any value that looks like a date — because a point in time is not
+a category to browse by, however much the values repeat. And **duplicates**: if
+two levels put the same notes in the same places, they are one dimension named
+twice, so only one survives. A folder pattern that invented the name `category`
+loses to your own `class` property, because the name you wrote means something
+and the one a pattern guessed does not.
 
 **Settings → Cerebrum → Levels found** lists exactly what was discovered, with
 its source and how many notes carry it, so the automatic behaviour is never a

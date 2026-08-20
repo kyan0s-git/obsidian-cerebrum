@@ -17,6 +17,8 @@ export interface CerebrumSettings {
 	autoFacets: boolean;
 	/** Level names to leave out, one per line. */
 	hiddenFacets: string[];
+	/** Rail sections the user has opened. Everything else stays collapsed. */
+	expandedSections: string[];
 
 	/** Graph */
 	graphIncludeAttachments: boolean;
@@ -45,6 +47,7 @@ export const DEFAULT_SETTINGS: CerebrumSettings = {
 	facetPatterns: [],
 	autoFacets: true,
 	hiddenFacets: [],
+	expandedSections: ['Vault'],
 
 	graphIncludeAttachments: false,
 	graphIncludeUnresolved: true,

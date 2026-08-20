@@ -28,6 +28,8 @@ export interface ExplorerContext {
 	/** Sets a facet filter, or clears it when the value is null. */
 	setFacet(name: string, value: string | null): void;
 	clearFacets(): void;
+	/** Opens or closes a rail section, remembering the choice. */
+	toggleSection(title: string): void;
 	setQuery(query: string): void;
 	showMore(): void;
 	refresh(): void;
@@ -168,6 +170,17 @@ export class ExplorerView extends ItemView {
 			clearFacets: () => {
 				this.state.facets = {};
 				this.state.visible = PAGE_SIZE;
+				this.render();
+			},
+			toggleSection: (title) => {
+				const open = this.deps.settings.expandedSections;
+				const index = open.indexOf(title);
+				if (index === -1) {
+					open.push(title);
+				} else {
+					open.splice(index, 1);
+				}
+				void this.deps.saveSettings();
 				this.render();
 			},
 			setQuery: (query) => {

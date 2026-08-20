@@ -53,6 +53,20 @@ In order, check:
 
 Giving a note a `description` in frontmatter always wins over reading the body.
 
+## The rail has too many sections
+
+They are collapsed by default, so the count costs you one row each. If a level
+should not be there at all:
+
+- **A date property became a level** — it should not; report it. Keys named
+  `created`, `updated`, `date` and values shaped like dates are excluded.
+- **Two levels say the same thing** — they collapse automatically when they
+  assign the same notes the same values. If they only *nearly* agree, both
+  survive on purpose; hide one under **Hidden levels**.
+- **A folder pattern invented a name you do not use** — delete that pattern
+  line. Auto-detection names path levels generically, and your own properties
+  and tags are usually the better vocabulary.
+
 ## A level is missing, or a note is filed under the wrong one
 
 **Settings → Cerebrum → Levels found** lists what was discovered and from where;
