@@ -6,6 +6,7 @@
 | --- | --- |
 | Ribbon, grid icon | The browser |
 | Ribbon, fork icon | The graph |
+| Fork icon in the browser's tab header | The graph, filtered to what you are browsing |
 | Command palette | Five commands, listed below |
 | Right click a note in any file list | **Show links in graph** |
 | Right click a folder in the file explorer | **Browse this folder** |
@@ -83,15 +84,23 @@ the last is clickable.
 
 ### Cards
 
-A card shows the title, the folder, an excerpt, up to four tags, the last edit,
-and two counts: links in and links out.
+A card answers one question — is this the note I want? — so it carries a title,
+two lines of what the note says, and the least context that tells it apart from
+its neighbours.
 
 - The **title** is the note's frontmatter `title` if it has one, otherwise the
-  file name.
+  file name. It is the only thing on the card at full contrast.
 - The **excerpt** is the frontmatter `description`, `summary` or `abstract` if
   present. Otherwise the note is read and stripped down to prose — code fences,
-  headings, list markers, embeds and link syntax removed — and clipped to about
-  220 characters. Files above 512 KB are never read for an excerpt.
+  headings, list markers, embeds and link syntax removed. Files above 512 KB are
+  never read for an excerpt.
+- The **context line** shows up to two level values, and what it shows depends
+  on where you are: a level you are already filtering by is left out, because
+  repeating "2026 physics" on every card in a filtered view tells you nothing.
+  With no levels at all, it shows the folder instead. Click a value to filter by
+  it.
+- **Link counts** appear on hover. They are worth knowing and almost never worth
+  deciding a click on, so they stay out of the way until asked for.
 
 | Action on a card | Result |
 | --- | --- |
@@ -259,8 +268,10 @@ when the node limit hid part of the vault.
 - **Colour** picks what node colour means: the top level folder, or any level
   you have configured. Colouring by subject and then clicking a legend entry
   filters the graph to that subject.
-- Toggles for **attachments**, **missing pages**, **unlinked notes**, **arrows**
-  and **labels**. All are remembered between sessions.
+- **Display options** (the sliders icon) holds what to include — attachments,
+  pages not written yet, notes with no links — and whether to draw arrows and
+  labels. They change rarely, so they sit behind one control rather than five
+  buttons you re-read every time.
 - **Fit to view** frames every node; **run the layout again** unpins everything
   and reshuffles.
 

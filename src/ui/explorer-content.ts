@@ -1,5 +1,8 @@
 import { TFile, setIcon, setTooltip } from 'obsidian';
 import { EXPLORER_VIEW_TYPE } from '../constants';
+
+/** How many level values a card shows before it is just a path again. */
+const MAX_CONTEXT = 2;
 import { groupNotes, searchNotes, sortNotes } from '../core/filters';
 import type { NoteEntry, UnresolvedEntry } from '../types';
 import { formatCount, formatFolder, formatRelativeTime } from '../utils/format';
@@ -21,14 +24,10 @@ export function renderContent(
 		ctx.state.selection,
 	);
 
+	// A heading and a count. The description explained a view that the view
+	// itself explains, on every screen, forever.
 	const intro = container.createDiv({ cls: 'cerebrum-intro' });
-	setIcon(intro.createSpan({ cls: 'cerebrum-intro-icon' }), collection.icon);
-	const introText = intro.createDiv({ cls: 'cerebrum-intro-text' });
-	introText.createDiv({ cls: 'cerebrum-intro-title', text: collection.title });
-	introText.createDiv({
-		cls: 'cerebrum-intro-desc',
-		text: collection.description,
-	});
+	intro.createDiv({ cls: 'cerebrum-intro-title', text: collection.title });
 
 	const isMissingPages =
 		ctx.state.selection.kind === 'smart' &&
@@ -114,6 +113,14 @@ function renderFolders(
 	}
 }
 
+/**
+ * A card answers one question: is this the note I want?
+ *
+ * So it carries a title, a couple of lines of what the note says, and the least
+ * context that still tells it apart from its neighbours. Link counts live on
+ * hover, and anything you are already filtering by is left out, because a card
+ * where six things compete at the same weight is one you read instead of scan.
+ */
 function renderNote(
 	container: HTMLElement,
 	ctx: ExplorerContext,
@@ -121,52 +128,24 @@ function renderNote(
 ): void {
 	const file = ctx.view.app.vault.getFileByPath(note.path);
 	const card = container.createDiv({
-		cls:
-			ctx.settings.viewMode === 'cards' ? 'cerebrum-card' : 'cerebrum-row',
-	});
-	card.setCssProps({ '--cerebrum-accent': colorFor(note.space) });
-
-	const head = card.createDiv({ cls: 'cerebrum-card-head' });
-	setIcon(
-		head.createSpan({ cls: 'cerebrum-card-icon' }),
-		iconForExtension(note.extension),
-	);
-	head.createSpan({ cls: 'cerebrum-card-title', text: note.title });
-	head.createSpan({
-		cls: 'cerebrum-card-time',
-		text: formatRelativeTime(note.modified),
+		cls: ctx.settings.viewMode === 'cards' ? 'cerebrum-card' : 'cerebrum-row',
 	});
 
-	renderCardPath(card, ctx, note);
+	const title = card.createDiv({ cls: 'cerebrum-card-title' });
+	// An icon earns its place only where the file is not an ordinary note.
+	if (note.extension !== 'md') {
+		setIcon(
+			title.createSpan({ cls: 'cerebrum-card-icon' }),
+			iconForExtension(note.extension),
+		);
+	}
+	title.createSpan({ text: note.title });
 
 	if (ctx.settings.showExcerpts && ctx.settings.viewMode === 'cards') {
 		renderExcerpt(card, ctx, note, file);
 	}
 
-	const footer = card.createDiv({ cls: 'cerebrum-card-footer' });
-	const tags = footer.createDiv({ cls: 'cerebrum-card-tags' });
-	for (const tag of note.tags.slice(0, 4)) {
-		tags.createSpan({ cls: 'cerebrum-tag', text: tag }).addEventListener(
-			'click',
-			(evt) => {
-				evt.stopPropagation();
-				ctx.setSelection({ kind: 'tag', value: tag });
-			},
-		);
-	}
-	const links = footer.createDiv({ cls: 'cerebrum-card-links' });
-	linkBadge(
-		links,
-		'arrow-down-left',
-		note.incoming.length,
-		formatCount(note.incoming.length, 'link') + ' in',
-	);
-	linkBadge(
-		links,
-		'arrow-up-right',
-		note.outgoing.length,
-		formatCount(note.outgoing.length, 'link') + ' out',
-	);
+	renderMeta(card, ctx, note);
 
 	if (!file) {
 		return;
@@ -183,49 +162,78 @@ function renderNote(
 		evt.preventDefault();
 		showFileMenu(ctx.view.app, file, evt, EXPLORER_VIEW_TYPE);
 	});
-	wireHoverPreview(
-		ctx.view.app,
-		card,
-		file,
-		EXPLORER_VIEW_TYPE,
-		ctx.view,
-	);
+	wireHoverPreview(ctx.view.app, card, file, EXPLORER_VIEW_TYPE, ctx.view);
 }
 
 /**
- * Under the title: the note's facet values when patterns are configured, since
- * "2026 / physics / unit 3" says more than the folder path it came from.
+ * One quiet line under the card: where the note sits, when it last changed,
+ * and — only while the pointer is on it — how connected it is.
+ *
+ * Context leaves out whatever is already filtered. Browsing physics in 2026,
+ * every card would otherwise repeat "2026 physics" on every single card.
  */
-function renderCardPath(
+function renderMeta(
 	card: HTMLElement,
 	ctx: ExplorerContext,
 	note: NoteEntry,
 ): void {
-	const values: { name: string; value: string }[] = [];
+	const meta = card.createDiv({ cls: 'cerebrum-card-meta' });
+	const context = meta.createDiv({ cls: 'cerebrum-card-context' });
+
+	const shown: { name: string; value: string }[] = [];
 	for (const name of ctx.model.getFacetNames()) {
-		for (const value of note.facets[name] ?? []) {
-			values.push({ name, value });
+		if (ctx.state.facets[name] !== undefined) {
+			continue;
+		}
+		const value = note.facets[name]?.[0];
+		if (value !== undefined) {
+			shown.push({ name, value });
 		}
 	}
-	if (values.length === 0) {
-		card.createDiv({ cls: 'cerebrum-card-path', text: formatFolder(note.folder) });
-		return;
+
+	if (shown.length === 0) {
+		// Nothing else to say: the folder answers "where is this", unless that
+		// is exactly what you are browsing.
+		const browsing =
+			ctx.state.selection.kind === 'folder' &&
+			ctx.state.selection.value === note.folder;
+		if (!browsing) {
+			context.createSpan({
+				cls: 'cerebrum-card-crumb',
+				text: formatFolder(note.folder),
+			});
+		}
+	} else {
+		for (const entry of shown.slice(0, MAX_CONTEXT)) {
+			const crumb = context.createSpan({
+				cls: 'cerebrum-card-crumb is-clickable',
+				text: entry.value,
+			});
+			setTooltip(crumb, `Filter by ${entry.name}`);
+			crumb.addEventListener('click', (evt) => {
+				evt.stopPropagation();
+				ctx.setFacet(entry.name, entry.value);
+			});
+		}
 	}
-	const row = card.createDiv({ cls: 'cerebrum-card-path' });
-	for (const entry of values) {
-		const chip = row.createSpan({
-			cls: 'cerebrum-card-facet',
-			text: entry.value,
-		});
-		chip.setCssProps({
-			'--cerebrum-accent': colorFor(`${entry.name}:${entry.value}`),
-		});
-		setTooltip(chip, `Filter by ${entry.name}`);
-		chip.addEventListener('click', (evt) => {
-			evt.stopPropagation();
-			ctx.setFacet(entry.name, entry.value);
-		});
-	}
+
+	meta.createSpan({
+		cls: 'cerebrum-card-time',
+		text: formatRelativeTime(note.modified),
+	});
+
+	const links = meta.createSpan({ cls: 'cerebrum-card-links' });
+	setTooltip(
+		links,
+		`${formatCount(note.incoming.length, 'link')} in, ${formatCount(
+			note.outgoing.length,
+			'link',
+		)} out`,
+	);
+	setIcon(links.createSpan({ cls: 'cerebrum-link-icon' }), 'link');
+	links.createSpan({
+		text: String(note.incoming.length + note.outgoing.length),
+	});
 }
 
 function renderExcerpt(
@@ -254,18 +262,6 @@ function renderExcerpt(
 	});
 }
 
-function linkBadge(
-	container: HTMLElement,
-	icon: string,
-	count: number,
-	tooltip: string,
-): void {
-	const badge = container.createSpan({ cls: 'cerebrum-link-badge' });
-	setIcon(badge.createSpan({ cls: 'cerebrum-link-icon' }), icon);
-	badge.createSpan({ text: String(count) });
-	setTooltip(badge, tooltip);
-}
-
 /** Missing pages get their own layout: the link text plus who is asking for it. */
 function renderUnresolved(
 	container: HTMLElement,
@@ -285,10 +281,12 @@ function renderUnresolved(
 	const list = container.createDiv({ cls: 'cerebrum-rows' });
 	for (const entry of filtered.slice(0, ctx.state.visible)) {
 		const row = list.createDiv({ cls: 'cerebrum-row is-missing' });
-		const head = row.createDiv({ cls: 'cerebrum-card-head' });
-		setIcon(head.createSpan({ cls: 'cerebrum-card-icon' }), 'file-question');
-		head.createSpan({ cls: 'cerebrum-card-title', text: entry.name });
-		head.createSpan({
+		const title = row.createDiv({ cls: 'cerebrum-card-title' });
+		setIcon(title.createSpan({ cls: 'cerebrum-card-icon' }), 'file-question');
+		title.createSpan({ text: entry.name });
+		row.createDiv({
+			cls: 'cerebrum-card-meta',
+		}).createSpan({
 			cls: 'cerebrum-card-time',
 			text: formatCount(entry.sources.length, 'reference'),
 		});
@@ -329,20 +327,33 @@ function renderUnresolved(
 }
 
 function renderEmpty(container: HTMLElement, ctx: ExplorerContext): void {
+	const searching = ctx.state.query.trim() !== '';
+	const filtered = Object.keys(ctx.state.facets).length > 0;
+
 	const empty = container.createDiv({ cls: 'cerebrum-empty' });
-	setIcon(empty.createDiv({ cls: 'cerebrum-empty-icon' }), 'search-x');
 	empty.createDiv({
 		cls: 'cerebrum-empty-title',
-		text:
-			ctx.state.query.trim() === ''
-				? 'Nothing here yet'
-				: 'No notes match that search',
+		text: searching || filtered ? 'Nothing matches' : 'Nothing here yet',
 	});
+
+	// An empty state that only describes the dead end leaves you to find the
+	// way out yourself.
+	if (filtered) {
+		const clear = empty.createEl('button', { text: 'Clear filters' });
+		clear.addEventListener('click', () => {
+			ctx.clearFacets();
+		});
+		return;
+	}
+	if (searching) {
+		const clear = empty.createEl('button', { text: 'Clear search' });
+		clear.addEventListener('click', () => {
+			ctx.setQuery('');
+		});
+		return;
+	}
 	empty.createDiv({
 		cls: 'cerebrum-empty-desc',
-		text:
-			ctx.state.query.trim() === ''
-				? 'Add a note to this space and it will appear straight away.'
-				: 'Try a shorter search, or pick another collection on the left.',
+		text: 'Add a note here and it will appear straight away.',
 	});
 }

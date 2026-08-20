@@ -1,5 +1,6 @@
 import {
 	ItemView,
+	Menu,
 	TFile,
 	ViewStateResult,
 	WorkspaceLeaf,
@@ -542,67 +543,63 @@ export class GraphView extends ItemView {
 			});
 		}
 
+		// Five toggles in a row is five decisions on every glance. They change
+		// rarely, so they live behind one control that says what it is.
 		const settings = this.deps.settings;
-		this.toggleButton(
-			toolbar,
-			'paperclip',
-			'Include attachments',
-			settings.graphIncludeAttachments,
-			() => {
-				settings.graphIncludeAttachments = !settings.graphIncludeAttachments;
-				void this.deps.saveSettings();
-				this.renderToolbar();
-				this.rebuild();
-			},
-		);
-		this.toggleButton(
-			toolbar,
-			'file-question',
-			'Include pages that do not exist yet',
-			settings.graphIncludeUnresolved,
-			() => {
-				settings.graphIncludeUnresolved = !settings.graphIncludeUnresolved;
-				void this.deps.saveSettings();
-				this.renderToolbar();
-				this.rebuild();
-			},
-		);
-		this.toggleButton(
-			toolbar,
-			'unlink',
-			'Include notes with no links',
-			settings.graphIncludeOrphans,
-			() => {
-				settings.graphIncludeOrphans = !settings.graphIncludeOrphans;
-				void this.deps.saveSettings();
-				this.renderToolbar();
-				this.rebuild();
-			},
-		);
-		this.toggleButton(
-			toolbar,
-			'move-right',
-			'Show link direction',
-			settings.graphShowArrows,
-			() => {
-				settings.graphShowArrows = !settings.graphShowArrows;
-				void this.deps.saveSettings();
-				this.renderToolbar();
-				this.paint();
-			},
-		);
-		this.toggleButton(
-			toolbar,
-			'type',
-			'Show labels',
-			settings.graphShowLabels,
-			() => {
-				settings.graphShowLabels = !settings.graphShowLabels;
-				void this.deps.saveSettings();
-				this.renderToolbar();
-				this.paint();
-			},
-		);
+		const display = toolbar.createEl('button', { cls: 'clickable-icon' });
+		setIcon(display, 'sliders-horizontal');
+		setTooltip(display, 'Display options');
+		display.addEventListener('click', (evt) => {
+			const menu = new Menu();
+			const toggle = (
+				title: string,
+				value: boolean,
+				apply: (next: boolean) => void,
+				redrawOnly = false,
+			): void => {
+				menu.addItem((item) =>
+					item
+						.setTitle(title)
+						.setChecked(value)
+						.onClick(() => {
+							apply(!value);
+							void this.deps.saveSettings();
+							if (redrawOnly) {
+								this.paint();
+							} else {
+								this.rebuild();
+							}
+						}),
+				);
+			};
+			toggle('Attachments', settings.graphIncludeAttachments, (next) => {
+				settings.graphIncludeAttachments = next;
+			});
+			toggle('Pages not written yet', settings.graphIncludeUnresolved, (next) => {
+				settings.graphIncludeUnresolved = next;
+			});
+			toggle('Notes with no links', settings.graphIncludeOrphans, (next) => {
+				settings.graphIncludeOrphans = next;
+			});
+			menu.addSeparator();
+			toggle(
+				'Link direction',
+				settings.graphShowArrows,
+				(next) => {
+					settings.graphShowArrows = next;
+				},
+				true,
+			);
+			toggle(
+				'Labels',
+				settings.graphShowLabels,
+				(next) => {
+					settings.graphShowLabels = next;
+				},
+				true,
+			);
+			menu.showAtMouseEvent(evt);
+		});
 
 		const fit = toolbar.createEl('button', { cls: 'clickable-icon' });
 		setIcon(fit, 'maximize');

@@ -7,6 +7,7 @@ import type { Selection, SmartListId } from '../types';
 import { renderContent } from './explorer-content';
 import { renderHeader } from './explorer-header';
 import { renderRail } from './explorer-rail';
+import { openGraph } from './view-actions';
 
 export interface ExplorerState {
 	selection: Selection;
@@ -126,6 +127,17 @@ export class ExplorerView extends ItemView {
 		const body = container.createDiv({ cls: 'cerebrum-body' });
 		this.railEl = body.createDiv({ cls: 'cerebrum-rail' });
 		this.contentAreaEl = body.createDiv({ cls: 'cerebrum-content' });
+
+		// Obsidian puts view actions in the tab header, so this one goes there
+		// rather than adding a sixth control to the toolbar.
+		this.addAction('git-fork', 'Show this selection in the graph', () => {
+			const selection = this.state.selection;
+			const query =
+				selection.kind === 'folder' || selection.kind === 'tag'
+					? selection.value
+					: this.state.query;
+			void openGraph(this.app, { query, focusPath: null });
+		});
 
 		this.unsubscribe = this.deps.model.subscribe(() => this.render());
 		this.deps.model.ensureBuilt();

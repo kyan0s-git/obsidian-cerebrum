@@ -43,16 +43,16 @@ deeper or shallower than a pattern. All four settings rebuild the index.
 
 | Setting | Default | Where | Effect |
 | --- | --- | --- | --- |
-| Include pages that do not exist yet | on | Settings and toolbar | Draws links to missing notes as hollow nodes |
-| Include unlinked notes | on | Settings and toolbar | Keeps notes with no links. Off, the graph shows only the connected web |
+| Include pages that do not exist yet | on | Settings and graph display menu | Draws links to missing notes as hollow nodes |
+| Include unlinked notes | on | Settings and graph display menu | Keeps notes with no links. Off, the graph shows only the connected web |
 | Local graph depth | 1 | Settings and toolbar | Link steps followed around the focused note, in both directions. 1–4 |
 | Link distance | 90 | Settings | Resting length of a link in the layout. 30–250 |
 | Repel strength | 900 | Settings | How hard nodes push apart. 100–3000 |
 | Node limit | 2000 | Settings | Stops adding nodes past this count. 200–8000 |
-| Include attachments | off | Toolbar | Adds attachment nodes, coloured by file type |
+| Include attachments | off | Graph display menu | Adds attachment nodes, coloured by file type |
 | Colour | folder | Toolbar | What node colour means: the top level folder, or one of your levels. Appears only when levels are configured |
-| Show link direction | on | Toolbar | Arrowheads on links |
-| Show labels | on | Toolbar | Note titles under nodes |
+| Show link direction | on | Graph display menu | Arrowheads on links |
+| Show labels | on | Graph display menu | Note titles under nodes |
 
 ### Tuning the layout
 

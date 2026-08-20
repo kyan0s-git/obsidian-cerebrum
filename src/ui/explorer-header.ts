@@ -2,7 +2,6 @@ import { setIcon, setTooltip } from 'obsidian';
 import { colorFor } from '../utils/palette';
 import type { GroupKey, Selection, SortKey } from '../types';
 import type { ExplorerContext } from './explorer-view';
-import { openGraph } from './view-actions';
 import { SMART_LISTS } from './collections';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -57,7 +56,6 @@ export function renderHeader(container: HTMLElement, ctx: ExplorerContext): void
 		},
 	);
 	renderModeToggle(toolbar, ctx);
-	renderGraphButton(toolbar, ctx);
 }
 
 /** Active facet filters, each removable, with a clear-all when several are on. */
@@ -199,18 +197,4 @@ function renderModeToggle(toolbar: HTMLElement, ctx: ExplorerContext): void {
 			ctx.persist();
 		});
 	}
-}
-
-function renderGraphButton(toolbar: HTMLElement, ctx: ExplorerContext): void {
-	const button = toolbar.createEl('button', { cls: 'clickable-icon' });
-	setIcon(button, 'git-fork');
-	setTooltip(button, 'Show this selection in the graph');
-	button.addEventListener('click', () => {
-		const selection = ctx.state.selection;
-		const query =
-			selection.kind === 'folder' || selection.kind === 'tag'
-				? selection.value
-				: ctx.state.query;
-		void openGraph(ctx.view.app, { query, focusPath: null });
-	});
 }
