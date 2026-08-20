@@ -75,8 +75,8 @@ the same filter.
   linked. Each option states its own direction, so there is no separate toggle
   to reason about.
 - **Group** by folder, by date, or by any level.
-- **Layout** switches between cards and a denser list. Excerpts appear on cards
-  only.
+- **Density** — comfortable gives each note a card with two lines of what it
+  says; compact drops to a row per note. One control, not two layouts.
 - **Graph** (fork icon) opens the graph filtered to the current selection.
 
 The breadcrumb above the toolbar shows where you are, and every segment except

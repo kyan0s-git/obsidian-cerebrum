@@ -70,7 +70,7 @@ export function renderContent(
 		}
 		const list = container.createDiv({
 			cls:
-				ctx.settings.viewMode === 'cards'
+				ctx.settings.density === 'comfortable'
 					? 'cerebrum-cards'
 					: 'cerebrum-rows',
 		});
@@ -128,7 +128,10 @@ function renderNote(
 ): void {
 	const file = ctx.view.app.vault.getFileByPath(note.path);
 	const card = container.createDiv({
-		cls: ctx.settings.viewMode === 'cards' ? 'cerebrum-card' : 'cerebrum-row',
+		cls:
+			ctx.settings.density === 'comfortable'
+				? 'cerebrum-card'
+				: 'cerebrum-row',
 	});
 
 	const title = card.createDiv({ cls: 'cerebrum-card-title' });
@@ -141,7 +144,8 @@ function renderNote(
 	}
 	title.createSpan({ text: note.title });
 
-	if (ctx.settings.showExcerpts && ctx.settings.viewMode === 'cards') {
+	// Room for what the note says is the whole difference between the two.
+	if (ctx.settings.density === 'comfortable') {
 		renderExcerpt(card, ctx, note, file);
 	}
 

@@ -12,11 +12,10 @@ each one is.
 | Setting | Default | Where | Effect |
 | --- | --- | --- | --- |
 | Open notes in a new tab | off | Settings | Off, a click reuses the current tab. On, every click opens a new tab. Cmd/Ctrl always does the opposite, middle click always opens a tab, and Cmd/Ctrl+Alt always splits |
-| Show excerpts on cards | on | Settings | Reads the first lines of a note for the card preview. Turning it off stops Cerebrum reading note bodies at all |
 | Include notes from subfolders | off | Settings | Off, a space shows only what sits directly in it. On, it shows everything nested below |
 | Show attachments | off | Settings | Includes images, audio, PDFs and other non-note files in the browser. Folder counts stay note-only either way |
 | Hidden folders | empty | Settings | One folder path per line. Everything inside is excluded from both views, from counts, and from link resolution, so a link into a hidden folder is reported as missing |
-| Layout | cards | Browser toolbar | Cards or list |
+| Density | comfortable | Browser toolbar | Comfortable gives each note a card with an excerpt; compact gives it a row |
 | Sort | newest first | Browser toolbar | Newest, oldest, title A–Z, title Z–A, most linked. Direction is part of the option |
 | Grouping | none | Browser toolbar | None, folder, date, or any level |
 
@@ -46,9 +45,10 @@ deeper or shallower than a pattern. All four settings rebuild the index.
 | Include pages that do not exist yet | on | Settings and graph display menu | Draws links to missing notes as hollow nodes |
 | Include unlinked notes | on | Settings and graph display menu | Keeps notes with no links. Off, the graph shows only the connected web |
 | Local graph depth | 1 | Settings and toolbar | Link steps followed around the focused note, in both directions. 1–4 |
-| Link distance | 90 | Settings | Resting length of a link in the layout. 30–250 |
-| Repel strength | 900 | Settings | How hard nodes push apart. 100–3000 |
-| Node limit | 2000 | Settings | Stops adding nodes past this count. 200–8000 |
+| Show advanced options | off | Settings | Reveals the tuning knobs below |
+| Link distance | 90 | Advanced | Resting length of a link in the layout. 30–250 |
+| Repel strength | 900 | Advanced | How hard nodes push apart. 100–3000 |
+| Node limit | 2000 | Advanced | Stops adding nodes past this count. 200–8000 |
 | Include attachments | off | Graph display menu | Adds attachment nodes, coloured by file type |
 | Colour | folder | Toolbar | What node colour means: the top level folder, or one of your levels. Appears only when levels are configured |
 | Show link direction | on | Graph display menu | Arrowheads on links |
@@ -76,10 +76,9 @@ it. Values much above `0.2` compress the whole graph into the centre.
 ```json
 {
   "openInNewTab": false,
-  "viewMode": "cards",
+  "density": "comfortable",
   "sortKey": "newest",
   "groupKey": "none",
-  "showExcerpts": true,
   "showAttachments": false,
   "showSubfolderContents": false,
   "excludedFolders": [],
@@ -96,7 +95,9 @@ it. Values much above `0.2` compress the whole graph into the centre.
   "graphRepelStrength": 900,
   "graphCenterStrength": 0.05,
   "graphMaxNodes": 2000,
-  "graphColorBy": ""
+  "graphColorBy": "",
+  "expandedSections": ["Vault"],
+  "showAdvanced": false
 }
 ```
 

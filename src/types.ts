@@ -55,7 +55,8 @@ export interface UnresolvedEntry {
 	sources: string[];
 }
 
-export type ViewMode = 'cards' | 'list';
+/** How much room each note gets. Comfortable shows what a note says. */
+export type Density = 'comfortable' | 'compact';
 
 /** Sort options carry their own direction, so there is no separate toggle. */
 export type SortKey = 'newest' | 'oldest' | 'title' | 'title-desc' | 'links';

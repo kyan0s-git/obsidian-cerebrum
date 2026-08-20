@@ -22,6 +22,8 @@ export interface GraphNode {
 	vy: number;
 	/** Pinned by a drag, ignored by the simulation while true. */
 	pinned: boolean;
+	/** Fades from 0 to 1 as the node arrives, so nothing pops into place. */
+	appear: number;
 }
 
 export interface GraphEdge {
@@ -214,6 +216,7 @@ function makeNode(
 		vx: 0,
 		vy: 0,
 		pinned: false,
+		appear: 0,
 	};
 }
 

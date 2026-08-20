@@ -33,6 +33,11 @@ export interface GraphDeps {
 
 const EMPTY_GRAPH: GraphData = { nodes: [], edges: [], truncated: 0 };
 
+/** Per frame: how fast a node fades in, the camera glides, a drag follows. */
+const APPEAR_STEP = 0.08;
+const CAMERA_EASE = 0.18;
+const DRAG_EASE = 0.35;
+
 /**
  * A graph of what every page actually links to. Edges come from each note's own
  * references, so links, embeds and frontmatter links all show up with the
@@ -52,6 +57,8 @@ export class GraphView extends ItemView {
 	private data: GraphData = EMPTY_GRAPH;
 	private simulation: ForceSimulation | null = null;
 	private camera: Camera = { x: 0, y: 0, scale: 1 };
+	/** Where the camera is heading, so framing glides instead of cutting. */
+	private cameraTarget: Camera | null = null;
 	private theme: ThemeColors | null = null;
 
 	private query = '';
@@ -60,6 +67,7 @@ export class GraphView extends ItemView {
 	private followActive = false;
 	private hovered: GraphNode | null = null;
 	private dragging: GraphNode | null = null;
+	private dragTarget: { x: number; y: number } | null = null;
 	private panning = false;
 	private pointerMoved = false;
 	private lastPointer = { x: 0, y: 0 };
@@ -210,6 +218,8 @@ export class GraphView extends ItemView {
 				node.x = old.x;
 				node.y = old.y;
 				node.pinned = old.pinned;
+				// A node that was already on screen should not fade in again.
+				node.appear = old.appear;
 			}
 		}
 
@@ -218,10 +228,12 @@ export class GraphView extends ItemView {
 			repelStrength: this.deps.settings.graphRepelStrength,
 			centerStrength: this.deps.settings.graphCenterStrength,
 		});
-		this.simulation.reheat(refit ? 1 : 0.5);
+		this.simulation.reheat(refit ? 0.9 : 0.4);
 		if (refit) {
+			// The first framing has nothing to glide from, so it lands directly.
+			const first = previous.size === 0;
 			window.setTimeout(() => {
-				this.fit();
+				this.fit(first);
 			}, 60);
 		}
 		this.renderStatus();
@@ -229,12 +241,19 @@ export class GraphView extends ItemView {
 		this.startLoop();
 	}
 
-	private fit(): void {
+	private fit(immediate = false): void {
 		const rect = this.canvas.getBoundingClientRect();
 		if (rect.width < 1 || rect.height < 1) {
 			return;
 		}
-		this.camera = fitCamera(this.data, rect.width, rect.height);
+		const target = fitCamera(this.data, rect.width, rect.height);
+		if (immediate) {
+			this.camera = target;
+			this.cameraTarget = null;
+		} else {
+			this.cameraTarget = target;
+		}
+		this.startLoop();
 	}
 
 	private resizeCanvas(): void {
@@ -253,12 +272,64 @@ export class GraphView extends ItemView {
 		const step = (): void => {
 			this.frame = null;
 			this.simulation?.tick();
+			this.advanceDrag();
+			const arriving = this.advanceAppearance();
+			const moving = this.advanceCamera();
 			this.paint();
-			if (this.simulation && !this.simulation.settled) {
+			const settling = this.simulation ? !this.simulation.settled : false;
+			if (settling || arriving || moving) {
 				this.frame = window.requestAnimationFrame(step);
 			}
 		};
 		this.frame = window.requestAnimationFrame(step);
+	}
+
+	private advanceDrag(): void {
+		const node = this.dragging;
+		const target = this.dragTarget;
+		if (!node || !target) {
+			return;
+		}
+		node.x += (target.x - node.x) * DRAG_EASE;
+		node.y += (target.y - node.y) * DRAG_EASE;
+	}
+
+	/** Fades newly arrived nodes in. Returns true while any is still arriving. */
+	private advanceAppearance(): boolean {
+		let arriving = false;
+		for (const node of this.data.nodes) {
+			if (node.appear < 1) {
+				node.appear = Math.min(1, node.appear + APPEAR_STEP);
+				arriving = true;
+			}
+		}
+		return arriving;
+	}
+
+	/** Glides the camera towards its target. Returns true while still moving. */
+	private advanceCamera(): boolean {
+		const target = this.cameraTarget;
+		if (!target) {
+			return false;
+		}
+		const dx = target.x - this.camera.x;
+		const dy = target.y - this.camera.y;
+		const dScale = target.scale - this.camera.scale;
+		if (
+			Math.abs(dx) < 0.5 &&
+			Math.abs(dy) < 0.5 &&
+			Math.abs(dScale) < 0.002
+		) {
+			this.camera = { ...target };
+			this.cameraTarget = null;
+			return false;
+		}
+		this.camera = {
+			x: this.camera.x + dx * CAMERA_EASE,
+			y: this.camera.y + dy * CAMERA_EASE,
+			scale: this.camera.scale + dScale * CAMERA_EASE,
+		};
+		return true;
 	}
 
 	private stopLoop(): void {
@@ -341,9 +412,10 @@ export class GraphView extends ItemView {
 				this.pointerMoved = true;
 			}
 			if (this.dragging) {
-				this.dragging.x = world.x;
-				this.dragging.y = world.y;
-				this.simulation?.reheat(0.35);
+				// Following the cursor exactly makes the node jump and its
+				// neighbours snap after it; easing towards it drags the web.
+				this.dragTarget = world;
+				this.simulation?.reheat(0.3);
 				this.startLoop();
 				return;
 			}
@@ -370,6 +442,7 @@ export class GraphView extends ItemView {
 				canvas.releasePointerCapture(evt.pointerId);
 			}
 			const dragged = this.dragging;
+			this.dragTarget = null;
 			if (dragged) {
 				// A click without movement opens the note, a drag pins the node.
 				if (!this.pointerMoved) {
@@ -606,7 +679,6 @@ export class GraphView extends ItemView {
 		setTooltip(fit, 'Fit to view');
 		fit.addEventListener('click', () => {
 			this.fit();
-			this.paint();
 		});
 
 		const relayout = toolbar.createEl('button', { cls: 'clickable-icon' });

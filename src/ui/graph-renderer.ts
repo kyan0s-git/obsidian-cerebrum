@@ -157,20 +157,32 @@ function drawEdges(
 			context.setLineDash([2 / camera.scale, 3 / camera.scale]);
 		}
 
-		const radius = nodeRadius(target);
+		// A line drawn from centre to centre runs underneath both nodes and
+		// pokes out of them. Trimming it at each edge is most of why a graph
+		// looks drawn rather than plotted.
 		const dx = target.x - source.x;
 		const dy = target.y - source.y;
 		const length = Math.sqrt(dx * dx + dy * dy) || 1;
-		const endX = target.x - (dx / length) * radius;
-		const endY = target.y - (dy / length) * radius;
+		const unitX = dx / length;
+		const unitY = dy / length;
+		const startGap = nodeRadius(source) + 1.5 / camera.scale;
+		const endGap = nodeRadius(target) + 1.5 / camera.scale;
+		if (length <= startGap + endGap) {
+			context.restore();
+			continue;
+		}
+		const startX = source.x + unitX * startGap;
+		const startY = source.y + unitY * startGap;
+		const endX = target.x - unitX * endGap;
+		const endY = target.y - unitY * endGap;
 
 		context.beginPath();
-		context.moveTo(source.x, source.y);
+		context.moveTo(startX, startY);
 		context.lineTo(endX, endY);
 		context.stroke();
 
 		if (options.showArrows && camera.scale > 0.45 && !dimmed) {
-			drawArrowHead(context, dx / length, dy / length, endX, endY, camera);
+			drawArrowHead(context, unitX, unitY, endX, endY, camera);
 		}
 		context.restore();
 	}
@@ -214,10 +226,19 @@ function drawNodes(
 		const isFocus = node.path !== '' && node.path === options.focusPath;
 		const isHovered = options.hovered?.id === node.id;
 
+		const appear = easeOut(node.appear);
 		context.save();
-		context.globalAlpha = dimmed ? 0.12 : 1;
+		context.globalAlpha = (dimmed ? 0.12 : 1) * appear;
+
+		// A ring in the page colour separates the node from whatever passes
+		// behind it, which is what stops a dense graph reading as a smudge.
 		context.beginPath();
-		context.arc(node.x, node.y, radius, 0, Math.PI * 2);
+		context.arc(node.x, node.y, radius + 1.5 / camera.scale, 0, Math.PI * 2);
+		context.fillStyle = options.theme.background;
+		context.fill();
+
+		context.beginPath();
+		context.arc(node.x, node.y, radius * appear, 0, Math.PI * 2);
 		if (node.kind === 'ghost') {
 			context.strokeStyle = nodeColor(node, options.theme);
 			context.lineWidth = 1.4 / camera.scale;
@@ -251,6 +272,12 @@ function drawNodes(
 		}
 		context.restore();
 	}
+}
+
+/** Fast at first, gentle at the end, which is how arriving should feel. */
+function easeOut(value: number): number {
+	const clamped = Math.min(1, Math.max(0, value));
+	return 1 - (1 - clamped) * (1 - clamped);
 }
 
 function truncate(text: string, max: number): string {

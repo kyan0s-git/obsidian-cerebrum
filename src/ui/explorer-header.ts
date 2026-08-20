@@ -1,6 +1,6 @@
 import { setIcon, setTooltip } from 'obsidian';
 import { colorFor } from '../utils/palette';
-import type { GroupKey, Selection, SortKey } from '../types';
+import type { Density, GroupKey, Selection, SortKey } from '../types';
 import type { ExplorerContext } from './explorer-view';
 import { SMART_LISTS } from './collections';
 
@@ -177,23 +177,24 @@ function renderSelect<T extends string>(
 	});
 }
 
+/** One control for how much room a note gets, rather than two layouts. */
 function renderModeToggle(toolbar: HTMLElement, ctx: ExplorerContext): void {
 	const group = toolbar.createDiv({ cls: 'cerebrum-mode-toggle' });
-	const modes: { value: 'cards' | 'list'; icon: string; label: string }[] = [
-		{ value: 'cards', icon: 'layout-grid', label: 'Card layout' },
-		{ value: 'list', icon: 'list', label: 'List layout' },
+	const options: { value: Density; icon: string; label: string }[] = [
+		{ value: 'comfortable', icon: 'rows-3', label: 'Comfortable' },
+		{ value: 'compact', icon: 'rows-4', label: 'Compact' },
 	];
-	for (const mode of modes) {
+	for (const option of options) {
 		const button = group.createEl('button', {
 			cls:
-				ctx.settings.viewMode === mode.value
+				ctx.settings.density === option.value
 					? 'clickable-icon is-active'
 					: 'clickable-icon',
 		});
-		setIcon(button, mode.icon);
-		setTooltip(button, mode.label);
+		setIcon(button, option.icon);
+		setTooltip(button, option.label);
 		button.addEventListener('click', () => {
-			ctx.settings.viewMode = mode.value;
+			ctx.settings.density = option.value;
 			ctx.persist();
 		});
 	}

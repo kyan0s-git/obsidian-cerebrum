@@ -1,12 +1,11 @@
-import type { GroupKey, SortKey, ViewMode } from './types';
+import type { Density, GroupKey, SortKey } from './types';
 
 export interface CerebrumSettings {
 	/** Explorer */
 	openInNewTab: boolean;
-	viewMode: ViewMode;
+	density: Density;
 	sortKey: SortKey;
 	groupKey: GroupKey;
-	showExcerpts: boolean;
 	showAttachments: boolean;
 	showSubfolderContents: boolean;
 	/** Folder paths hidden from every view, one per line. */
@@ -19,6 +18,8 @@ export interface CerebrumSettings {
 	hiddenFacets: string[];
 	/** Rail sections the user has opened. Everything else stays collapsed. */
 	expandedSections: string[];
+	/** Reveal the tuning settings, which most vaults never need. */
+	showAdvanced: boolean;
 
 	/** Graph */
 	graphIncludeAttachments: boolean;
@@ -37,10 +38,9 @@ export interface CerebrumSettings {
 
 export const DEFAULT_SETTINGS: CerebrumSettings = {
 	openInNewTab: false,
-	viewMode: 'cards',
+	density: 'comfortable',
 	sortKey: 'newest',
 	groupKey: 'none',
-	showExcerpts: true,
 	showAttachments: false,
 	showSubfolderContents: false,
 	excludedFolders: [],
@@ -48,6 +48,7 @@ export const DEFAULT_SETTINGS: CerebrumSettings = {
 	autoFacets: true,
 	hiddenFacets: [],
 	expandedSections: ['Vault'],
+	showAdvanced: false,
 
 	graphIncludeAttachments: false,
 	graphIncludeUnresolved: true,

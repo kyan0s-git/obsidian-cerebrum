@@ -175,8 +175,17 @@ reports itself settled and `GraphView` stops requesting frames. Dragging,
 changing a force setting or rebuilding reheats it. Nodes are seeded on a
 phyllotaxis spiral, which avoids the symmetric collapse a grid produces.
 
+Smoothness is mostly restraint. Heavy damping and a low speed ceiling mean a
+node covers a short distance each frame rather than a long one, and a node with
+no position yet is seeded **beside something it links to** rather than on a
+spiral across the graph, so it barely has to travel. Newly arrived nodes fade
+and grow in over a few frames, the camera glides to a new framing instead of
+cutting, and a dragged node eases towards the cursor so the web follows it
+rather than snapping after it.
+
 Measured on this implementation: 1,500 nodes and 1,499 edges tick in well under
-16 ms, so the layout holds 60 fps while settling.
+16 ms, so the layout holds 60 fps while settling, and no node moves more than a
+few pixels in a single frame.
 
 ## Rendering
 
@@ -193,6 +202,10 @@ makes it testable outside the app.
   `--text-normal`, `--interactive-accent` and friends) and cached until
   Obsidian's `css-change` event fires, so the graph follows the active theme
   including light and dark switches.
+- Edges are trimmed at both nodes' radii rather than drawn centre to centre,
+  and every node is painted on a ring of the page colour, so lines never run
+  under a node or touch its fill. Those two together are most of the difference
+  between a graph that looks drawn and one that looks plotted.
 - Hit testing is a linear scan for the nearest node within its radius plus a
   small screen-space margin. At the node counts the limit permits this is
   cheaper than maintaining a spatial index alongside a moving layout.

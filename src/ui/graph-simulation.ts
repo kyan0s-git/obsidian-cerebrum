@@ -6,11 +6,14 @@ export interface SimulationOptions {
 	centerStrength: number;
 }
 
-const DAMPING = 0.78;
-const ALPHA_DECAY = 0.988;
+// Smoothness is mostly restraint: heavier damping and a lower speed ceiling
+// mean a node covers a short distance every frame instead of a long one, which
+// is the difference between drifting into place and jumping there.
+const DAMPING = 0.86;
+const ALPHA_DECAY = 0.985;
 const ALPHA_MIN = 0.004;
-const SPRING_STIFFNESS = 0.06;
-const MAX_VELOCITY = 60;
+const SPRING_STIFFNESS = 0.055;
+const MAX_VELOCITY = 18;
 const THETA = 0.9;
 const MAX_DEPTH = 22;
 
@@ -77,12 +80,58 @@ export class ForceSimulation {
 		}
 	}
 
-	/** Phyllotaxis spread, which avoids the symmetric explosion of a grid. */
+	/**
+	 * Places nodes that have no position yet.
+	 *
+	 * A new node put on the far side of the graph has to fly across it, which is
+	 * the flight you see as the layout lurching. Starting it beside something it
+	 * links to means it barely has to move at all. Only nodes with no placed
+	 * neighbour fall back to a phyllotaxis spiral, which avoids the symmetric
+	 * explosion a grid produces.
+	 */
 	private seedPositions(): void {
 		const spacing = Math.max(this.options.linkDistance, 40) * 0.8;
-		let index = 0;
+		const placed = new Set<string>();
 		for (const node of this.nodes) {
 			if (node.x !== 0 || node.y !== 0) {
+				placed.add(node.id);
+			}
+		}
+
+		const neighbours = new Map<string, string[]>();
+		for (const edge of this.edges) {
+			neighbours.set(edge.source, [
+				...(neighbours.get(edge.source) ?? []),
+				edge.target,
+			]);
+			neighbours.set(edge.target, [
+				...(neighbours.get(edge.target) ?? []),
+				edge.source,
+			]);
+		}
+
+		let index = 0;
+		// Two passes, so a new node next to another new one still lands nearby.
+		for (let pass = 0; pass < 2; pass++) {
+			for (const node of this.nodes) {
+				if (placed.has(node.id)) {
+					continue;
+				}
+				const anchor = (neighbours.get(node.id) ?? [])
+					.map((id) => this.byId.get(id))
+					.find((other) => other && placed.has(other.id));
+				if (!anchor) {
+					continue;
+				}
+				const angle = Math.random() * Math.PI * 2;
+				node.x = anchor.x + Math.cos(angle) * spacing * 0.6;
+				node.y = anchor.y + Math.sin(angle) * spacing * 0.6;
+				placed.add(node.id);
+			}
+		}
+
+		for (const node of this.nodes) {
+			if (placed.has(node.id)) {
 				index++;
 				continue;
 			}

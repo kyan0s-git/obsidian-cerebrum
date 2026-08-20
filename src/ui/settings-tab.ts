@@ -35,16 +35,6 @@ export class CerebrumSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Show excerpts on cards')
-			.setDesc('Reads the first lines of each note to preview what it covers.')
-			.addToggle((toggle) =>
-				toggle.setValue(settings.showExcerpts).onChange((value) => {
-					settings.showExcerpts = value;
-					save();
-				}),
-			);
-
-		new Setting(containerEl)
 			.setName('Include notes from subfolders')
 			.setDesc('Show everything nested inside a space instead of its top level only.')
 			.addToggle((toggle) =>
@@ -121,6 +111,33 @@ export class CerebrumSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName('Show advanced options')
+			.setDesc('Layout forces and limits. Most vaults never need these.')
+			.addToggle((toggle) =>
+				toggle.setValue(settings.showAdvanced).onChange((value) => {
+					settings.showAdvanced = value;
+					save();
+					this.display();
+				}),
+			);
+
+		if (settings.showAdvanced) {
+			this.renderAdvanced(containerEl);
+		}
+
+		this.renderBuildInfo(containerEl);
+	}
+
+	/** Tuning knobs, which are settings only in the sense that they are stored. */
+	private renderAdvanced(containerEl: HTMLElement): void {
+		const settings = this.plugin.settings;
+		const save = (): void => {
+			void this.plugin.saveSettings();
+		};
+
+		new Setting(containerEl).setName('Layout').setHeading();
+
+		new Setting(containerEl)
 			.setName('Link distance')
 			.setDesc('Resting length of a link in the layout.')
 			.addSlider((slider) =>
@@ -161,8 +178,6 @@ export class CerebrumSettingTab extends PluginSettingTab {
 						save();
 					}),
 			);
-
-		this.renderBuildInfo(containerEl);
 	}
 
 	/** The exact build in use, for bug reports. */

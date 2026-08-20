@@ -29,7 +29,8 @@ Open it from the ribbon (**Browse the vault**) or the command palette.
 - **Tags** — every tag in the vault with its note count, as a one-click filter.
 - **Cards** carry a title, two lines of what the note says, and the least
   context that tells it apart — a level you already filtered by is left off,
-  and link counts wait until hover. A list layout is a click away.
+  and link counts wait until hover. One density control switches between a card
+  and a row.
 - Search runs over titles, paths, tags and aliases with Obsidian's own fuzzy
   matcher. Beside it sit one sort control, whose options carry their own
   direction, and one grouping control. That is the whole toolbar.
