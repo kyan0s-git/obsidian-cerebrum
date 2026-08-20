@@ -1,8 +1,8 @@
 import { setIcon, setTooltip } from 'obsidian';
-import { colorFor } from '../utils/palette';
-import type { Density, GroupKey, Selection, SortKey } from '../types';
+import { resolvePlace } from '../core/navigation';
+import type { Density, SortKey } from '../types';
+import { formatCount } from '../utils/format';
 import type { ExplorerContext } from './explorer-view';
-import { SMART_LISTS } from './collections';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 	{ value: 'newest', label: 'Newest first' },
@@ -12,133 +12,116 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 	{ value: 'links', label: 'Most linked' },
 ];
 
-const GROUP_OPTIONS: { value: GroupKey; label: string }[] = [
-	{ value: 'none', label: 'No grouping' },
-	{ value: 'folder', label: 'Group by folder' },
-	{ value: 'modified', label: 'Group by date' },
-];
-
-/** The fixed grouping choices plus one per configured facet. */
-function groupOptions(ctx: ExplorerContext): { value: GroupKey; label: string }[] {
-	const options = [...GROUP_OPTIONS];
-	for (const name of ctx.model.getFacetNames()) {
-		options.push({ value: `facet:${name}`, label: `Group by ${name}` });
-	}
-	return options;
-}
-
-export function renderHeader(container: HTMLElement, ctx: ExplorerContext): void {
+/**
+ * The header carries the two things every screen needs: where you are, and the
+ * way back. Controls come after that, and only the ones that change what you
+ * are looking at rather than how it is filed.
+ */
+export function renderHeader(
+	container: HTMLElement,
+	ctx: ExplorerContext,
+): void {
 	container.empty();
 
-	renderBreadcrumbs(container.createDiv({ cls: 'cerebrum-crumbs' }), ctx);
-	renderFacetChips(container, ctx);
+	renderCrumbs(container, ctx);
+	renderTitle(container, ctx);
 
 	const toolbar = container.createDiv({ cls: 'cerebrum-toolbar' });
 	renderSearch(toolbar, ctx);
-	renderSelect(
-		toolbar,
-		SORT_OPTIONS,
-		ctx.settings.sortKey,
-		'Sort notes',
-		(value) => {
-			ctx.settings.sortKey = value;
-			ctx.persist();
-		},
-	);
-	renderSelect(
-		toolbar,
-		groupOptions(ctx),
-		ctx.settings.groupKey,
-		'Group notes',
-		(value) => {
-			ctx.settings.groupKey = value;
-			ctx.persist();
-		},
-	);
-	renderModeToggle(toolbar, ctx);
+	renderSort(toolbar, ctx);
+	renderDensity(toolbar, ctx);
 }
 
-/** Active facet filters, each removable, with a clear-all when several are on. */
-function renderFacetChips(container: HTMLElement, ctx: ExplorerContext): void {
-	const entries = Object.entries(ctx.state.facets);
-	if (entries.length === 0) {
-		return;
-	}
-	const row = container.createDiv({ cls: 'cerebrum-facet-chips' });
-	for (const [name, value] of entries) {
-		const chip = row.createDiv({ cls: 'cerebrum-facet-chip' });
-		chip.setCssProps({ '--cerebrum-accent': colorFor(`${name}:${value}`) });
-		chip.createSpan({ cls: 'cerebrum-facet-name', text: name });
-		chip.createSpan({ cls: 'cerebrum-facet-value', text: value });
-		setIcon(chip.createSpan({ cls: 'cerebrum-facet-remove' }), 'x');
-		setTooltip(chip, `Remove the ${name} filter`);
-		chip.addEventListener('click', () => {
-			ctx.setFacet(name, null);
-		});
-	}
-	if (entries.length > 1) {
-		const clear = row.createEl('button', {
-			cls: 'cerebrum-facet-clear',
-			text: 'Clear all',
-		});
-		clear.addEventListener('click', () => {
-			ctx.clearFacets();
-		});
-	}
-}
+function renderCrumbs(container: HTMLElement, ctx: ExplorerContext): void {
+	const crumbs = container.createDiv({ cls: 'cerebrum-crumbs' });
+	const state = ctx.state;
 
-function renderBreadcrumbs(container: HTMLElement, ctx: ExplorerContext): void {
-	const selection = ctx.state.selection;
 	const crumb = (
 		label: string,
-		icon: string | null,
-		target: Selection | null,
+		go: (() => void) | null,
+		icon?: string,
 	): void => {
-		const el = container.createEl(target ? 'a' : 'span', {
-			cls: target ? 'cerebrum-crumb is-clickable' : 'cerebrum-crumb',
+		const el = crumbs.createEl(go ? 'a' : 'span', {
+			cls: go ? 'cerebrum-crumb is-clickable' : 'cerebrum-crumb',
 		});
 		if (icon) {
 			setIcon(el.createSpan({ cls: 'cerebrum-crumb-icon' }), icon);
 		}
 		el.createSpan({ text: label });
-		if (target) {
-			el.addEventListener('click', () => {
-				ctx.setSelection(target);
-			});
+		if (go) {
+			el.addEventListener('click', go);
 		}
 	};
 	const separator = (): void => {
-		setIcon(container.createSpan({ cls: 'cerebrum-crumb-sep' }), 'chevron-right');
+		setIcon(
+			crumbs.createSpan({ cls: 'cerebrum-crumb-sep' }),
+			'chevron-right',
+		);
 	};
 
-	if (selection.kind === 'smart') {
-		const list = SMART_LISTS.find((item) => item.id === selection.value);
-		crumb(list?.label ?? 'All notes', list?.icon ?? 'library', null);
-		return;
-	}
+	const home = (): void => {
+		ctx.go({ screen: 'browse', trail: [], tag: '', query: '' });
+	};
 
-	if (selection.kind === 'tag') {
-		crumb('Tags', 'tags', { kind: 'smart', value: 'all' });
+	if (state.screen !== 'browse') {
+		crumb('Home', home, 'home');
 		separator();
-		crumb(selection.value, null, null);
+		if (state.screen === 'tag') {
+			crumb('Tags', () => {
+				ctx.go({ screen: 'tags', tag: '', query: '' });
+			});
+			separator();
+			crumb(state.tag, null);
+			return;
+		}
+		crumb(screenLabel(state.screen), null);
 		return;
 	}
 
-	crumb(ctx.model.getFolder('')?.name ?? 'Vault', 'vault', {
-		kind: 'smart',
-		value: 'all',
+	const place = resolvePlace(ctx.model, ctx.settings, state.trail);
+	place.crumbs.forEach((entry, index) => {
+		const isLast = index === place.crumbs.length - 1;
+		if (index > 0) {
+			separator();
+		}
+		crumb(
+			entry.label,
+			isLast
+				? null
+				: () => {
+						ctx.go({ screen: 'browse', trail: entry.trail, query: '' });
+					},
+			index === 0 ? 'home' : undefined,
+		);
 	});
-	if (selection.value === '') {
+}
+
+/** The heading, and what this screen holds. */
+function renderTitle(container: HTMLElement, ctx: ExplorerContext): void {
+	const state = ctx.state;
+	const row = container.createDiv({ cls: 'cerebrum-intro' });
+
+	if (state.screen !== 'browse') {
+		row.createDiv({
+			cls: 'cerebrum-intro-title',
+			text: state.screen === 'tag' ? state.tag : screenLabel(state.screen),
+		});
 		return;
 	}
-	const segments = selection.value.split('/');
-	let path = '';
-	for (const segment of segments) {
-		path = path === '' ? segment : `${path}/${segment}`;
-		separator();
-		const isLast = path === selection.value;
-		crumb(segment, null, isLast ? null : { kind: 'folder', value: path });
+
+	const place = resolvePlace(ctx.model, ctx.settings, state.trail);
+	const vaultName = ctx.model.getFolder('')?.name ?? 'Cerebrum';
+	row.createDiv({
+		cls: 'cerebrum-intro-title',
+		text: state.trail.length === 0 ? vaultName : place.title,
+	});
+
+	const parts: string[] = [];
+	if (place.children.length > 0 && place.childLabel !== '') {
+		parts.push(`${place.children.length} ${place.childLabel.toLowerCase()}`);
 	}
+	parts.push(formatCount(place.allNotes.length, 'note'));
+	row.createDiv({ cls: 'cerebrum-intro-count', text: parts.join(' · ') });
 }
 
 function renderSearch(toolbar: HTMLElement, ctx: ExplorerContext): void {
@@ -147,38 +130,40 @@ function renderSearch(toolbar: HTMLElement, ctx: ExplorerContext): void {
 	const input = wrapper.createEl('input', {
 		type: 'search',
 		cls: 'cerebrum-search-input',
-		attr: { placeholder: 'Search titles, paths, tags and aliases' },
+		attr: {
+			placeholder:
+				ctx.state.screen === 'browse' && ctx.state.trail.length > 0
+					? 'Search here'
+					: 'Search notes',
+		},
 	});
 	input.value = ctx.state.query;
-	// Only the results re-render while typing, so the caret stays put.
+	// Only the results redraw while typing, so the caret stays put.
 	input.addEventListener('input', () => {
 		ctx.setQuery(input.value);
 	});
 }
 
-function renderSelect<T extends string>(
-	toolbar: HTMLElement,
-	options: { value: T; label: string }[],
-	current: T,
-	tooltip: string,
-	onChange: (value: T) => void,
-): void {
+function renderSort(toolbar: HTMLElement, ctx: ExplorerContext): void {
 	const select = toolbar.createEl('select', { cls: 'dropdown cerebrum-select' });
-	for (const option of options) {
+	for (const option of SORT_OPTIONS) {
 		select.createEl('option', { value: option.value, text: option.label });
 	}
-	select.value = current;
-	setTooltip(select, tooltip);
+	select.value = ctx.settings.sortKey;
+	setTooltip(select, 'Order');
 	select.addEventListener('change', () => {
-		const chosen = options.find((option) => option.value === select.value);
+		const chosen = SORT_OPTIONS.find(
+			(option) => option.value === select.value,
+		);
 		if (chosen) {
-			onChange(chosen.value);
+			ctx.settings.sortKey = chosen.value;
+			ctx.persist();
 		}
 	});
 }
 
 /** One control for how much room a note gets, rather than two layouts. */
-function renderModeToggle(toolbar: HTMLElement, ctx: ExplorerContext): void {
+function renderDensity(toolbar: HTMLElement, ctx: ExplorerContext): void {
 	const group = toolbar.createDiv({ cls: 'cerebrum-mode-toggle' });
 	const options: { value: Density; icon: string; label: string }[] = [
 		{ value: 'comfortable', icon: 'rows-3', label: 'Comfortable' },
@@ -197,5 +182,18 @@ function renderModeToggle(toolbar: HTMLElement, ctx: ExplorerContext): void {
 			ctx.settings.density = option.value;
 			ctx.persist();
 		});
+	}
+}
+
+function screenLabel(screen: string): string {
+	switch (screen) {
+		case 'tags':
+			return 'Tags';
+		case 'all':
+			return 'All notes';
+		case 'loose':
+			return 'Loose ends';
+		default:
+			return 'Home';
 	}
 }

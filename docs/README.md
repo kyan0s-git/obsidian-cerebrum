@@ -16,7 +16,7 @@ graph drawn from what each page actually links to.
 ## The short version
 
 Open the browser from the ribbon (**Browse the vault**) to see your notes as
-cards grouped into levels, spaces, collections and tags. Open the graph
+notes read as a course: levels to walk, tags to cross them. Open the graph
 (**Open the link graph**) to see the link structure, including embeds,
 frontmatter links and pages you have linked but never written.
 

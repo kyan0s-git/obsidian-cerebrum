@@ -29,96 +29,54 @@ bind them yourself in **Settings → Hotkeys**.
 
 ## The browser
 
-Three regions: a breadcrumb and toolbar on top, a rail on the left, cards in the
-middle.
+The vault reads as a course. Home offers what you can study, a step in offers
+what is inside it, and the last step offers the notes themselves. A breadcrumb
+sits above every screen, and the tab's own back arrow walks the trail in
+reverse, because each move is recorded the way Obsidian records opening a file.
 
-### The rail
+### The screens
 
-**Vault** holds the three views a sort cannot produce:
-
-| View | Contains |
+| Screen | Shows |
 | --- | --- |
-| All notes | Everything indexed |
-| Orphans | Notes with no links in and no resolved links out |
-| Missing pages | Link targets that have no note behind them, with the pages referencing them |
+| **Home** | One tile per value of your first level — the subjects, or the top folders when you have no levels. Underneath, quiet links to all notes, tags and loose ends |
+| **A step in** | Each value of the next level as a section, with the first few notes under it and a way into the rest — the way a course lists units with their lessons. Underneath: what this place links out to, and the tags it files under |
+| **The last step** | A plain list of notes, in the order you chose |
+| **All notes** | Every note under its initial, with the alphabet across the top |
+| **Tags** | Every tag with its count, like a blog archive. A tag lists its notes wherever they live |
+| **Loose ends** | Pages you have linked but never written, and notes nothing links to |
 
-"Recently edited" and "most linked" are not here, because each was only the
-whole vault in a different order: pick **Newest first** or **Most linked** in
-the sort control instead.
+### Four things borrowed from an encyclopaedia
 
-**Levels** come next, one section each — see [levels](#levels) below. Where a
-view chooses the set, levels refine it: each lists its values with counts, and
-picking one narrows the lists under it.
+A vault has the same problem an encyclopaedia does: thousands of pages that only
+mean anything next to each other. Wikipedia solves it with four devices, and
+Cerebrum reads all four off your notes rather than asking you to write them.
 
-Every section past **Vault** is **collapsed until you open it**, and the choice
-is remembered. A vault with a dozen dimensions therefore reads as a dozen
-labelled rows, not a dozen lists at once. A level you are filtering by opens
-itself and shows the chosen value on its header, so a closed rail still says
-what it is doing.
-
-**Spaces** are your folders. The rail lists the top level, and unfolds the
-branch you are currently inside so you keep sight of the rest of the vault while
-drilling down. The count beside a folder is the number of notes in it and
-everything below it; attachments are not counted. A **Vault root** entry appears
-above the folders when notes are stored loose at the root.
-
-**Folders** is your folder tree, and **Tags** lists the 24 most used tags. A
-nested tag that already became a level is left out, since its section above is
-the same filter.
-
-### The toolbar
-
-- **Search** matches titles, paths, tags and aliases using Obsidian's own fuzzy
-  matcher, best matches first. In vaults over 3,000 notes it narrows to titles
-  and paths to keep typing responsive.
-- **Sort**: newest first, oldest first, title A to Z, title Z to A, or most
-  linked. Each option states its own direction, so there is no separate toggle
-  to reason about.
-- **Group** by folder, by date, or by any level.
-- **Density** — comfortable gives each note a card with two lines of what it
-  says; compact drops to a row per note. One control, not two layouts.
-- **Graph** (fork icon) opens the graph filtered to the current selection.
-
-The breadcrumb above the toolbar shows where you are, and every segment except
-the last is clickable.
-
-### Cards
-
-A card answers one question — is this the note I want? — so it carries a title,
-two lines of what the note says, and the least context that tells it apart from
-its neighbours.
-
-- The **title** is the note's frontmatter `title` if it has one, otherwise the
-  file name. It is the only thing on the card at full contrast.
-- The **excerpt** is the frontmatter `description`, `summary` or `abstract` if
-  present. Otherwise the note is read and stripped down to prose — code fences,
-  headings, list markers, embeds and link syntax removed. Files above 512 KB are
-  never read for an excerpt.
-- The **context line** shows up to two level values, and what it shows depends
-  on where you are: a level you are already filtering by is left out, because
-  repeating "2026 physics" on every card in a filtered view tells you nothing.
-  With no levels at all, it shows the folder instead. Click a value to filter by
-  it.
-- **Link counts** appear on hover. They are worth knowing and almost never worth
-  deciding a click on, so they stay out of the way until asked for.
-
-| Action on a card | Result |
+| Device | In Cerebrum |
 | --- | --- |
-| Click | Opens the note, in the current tab or a new one per **Open notes in a new tab** |
-| Cmd/Ctrl-click | Opens it the other way from your default |
-| Middle click | Always opens a new tab |
-| Cmd/Ctrl+Alt-click | Opens in a split, whatever the default |
-| Cmd/Ctrl and hover | Page preview popover, if the Page preview core plugin is on |
-| Right click | The full file menu, including entries other plugins add |
-| Click a tag chip | Filters to that tag |
+| A category's main article | A note named for the place it sits in — `physics/physics.md`, or an `index`, `overview` or `readme` — leads that screen as **Start here**, with the first lines of what it says. It is not repeated in the list below |
+| See also | The pages the notes here lean on that live *somewhere else*, counted from the links themselves. It is the one way the hierarchy is crossed without searching |
+| The category footer | **Categories**: the tags the notes here actually share. Tags used only once stay on their note, so the footer says something about the place rather than listing everything |
+| Special:AllPages | **All notes** is an A–Z index rather than an endless list. Click a letter to jump |
 
-Results are paged at 60 items with a **Show more** button, so a large collection
-does not build thousands of cards at once.
+None of this is configured, and none of it needs maintaining: rename a note and
+it stops leading its place, link to a page and it appears under "See also".
 
-**Missing pages** uses a different row layout: the link text as written, how many
-notes reference it, and chips for the referencing notes. Clicking the row opens
-the link the same way clicking an unresolved link in a note does, which creates
-the note; clicking a chip opens the note that asked for it.
+Notes that sit above the level they are being browsed by are never hidden: they
+appear under **Also here** at that step. A note that fits no level at all still
+shows on home the same way, so nothing is unreachable.
+
+### Getting around
+
+- **A breadcrumb** on every screen, each part clickable.
+- **Back and forward**, the tab's own arrows, because every move is recorded in
+  the same history Obsidian keeps for files.
+- **Search** narrows to where you are: inside a subject it searches that
+  subject, on a flat screen it searches everything.
+- **Sort** and **density** are the only other controls. Sort options carry their
+  own direction; density decides whether a note gets a line of what it says.
+
+There is no sidebar of simultaneous filters. The hierarchy *is* the navigation,
+and tags cross it when the hierarchy is the wrong shape for what you want.
 
 ## Levels
 
@@ -151,7 +109,7 @@ whose values repeat across at least three notes, with between two and forty
 distinct values, and where values genuinely recur rather than being unique per
 note.
 
-That last rule is what keeps the rail clean. A `uid` property is unique per
+That last rule is what keeps the hierarchy shallow. A `uid` property is unique per
 note, so it is an identifier and never a level. A full timestamp is the same. A
 one-off tag namespace used twice is not worth a section yet. Obsidian's own keys
 — `title`, `aliases`, `tags`, `cssclasses` and friends — are never levels.
@@ -184,19 +142,13 @@ pattern per top level tree, which you then rename to taste.
 
 ### Using them
 
-The rail grows a section per level. Picking **2026** narrows the
-subject list to the subjects taught that year; picking **physics** narrows the
-units to the ones that subject has. Every active filter appears as a chip above
-the toolbar and can be removed on its own. The filters are independent of where
-you are browsing, so *physics* alone gathers the subject across `raw/`, `wiki/`
-and any other tree at once — the thing the folder hierarchy cannot do.
+Levels are the steps of the walk, in the order they are declared or discovered.
+The first is what home offers, the second is what a course contains, and so on
+down to the notes. Reordering the patterns reorders the walk.
 
-A note can sit in several values of one level at the same time, because tags and
-list properties are naturally plural: a note tagged `#subject/physics` and
-`#subject/maths` is counted and filtered under both.
-
-**Group by** gains an entry per level, and cards show their level values instead
-of a raw path. Clicking a value on a card filters to it.
+A note can carry several values of one level — two subject tags, say — and it
+then appears under each of them, which is what you want from a tag and what a
+folder could never do.
 
 ### Patterns in detail
 
@@ -221,7 +173,7 @@ anything:
 | Situation | What happens |
 | --- | --- |
 | A folder nested deeper than the pattern, say `unit-3/lab/` | The note keeps `unit-3`. Anything below the last named level stays with that level |
-| A note higher up than the pattern, say `raw/2026/note.md` | It gets `year`, and simply has no `subject` or `unit`. Grouping puts it under "No subject" |
+| A note higher up than the pattern, say `raw/2026/note.md` | It gets `year`, and simply has no `subject` or `unit`. It is listed under **Also here** on the year's screen, rather than being lost inside a subject |
 | A whole tree matching no pattern, say `inbox/` | It has no level values, and is still browsable under Spaces exactly as before |
 | A new folder at a named level, say a new subject | It appears as a new value in that level's list on the next rebuild. Nothing to configure |
 | A tree organised differently, say `archive/<subject>/<year>` | Give it its own pattern line. Different trees can name the same levels in a different order |

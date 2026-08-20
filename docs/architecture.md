@@ -14,15 +14,14 @@ src/
   core/
     vault-model.ts        the index of folders, notes, tags, links and backlinks
     facets.ts             levels: patterns, tag and property discovery, counting
+    navigation.ts         the walk: where am I, what is inside, what is here
     link-graph.ts         nodes and edges, local graphs, ghosts, scope filtering
-    filters.ts            fuzzy search, sorting, grouping
+    filters.ts            fuzzy search and sorting
     excerpts.ts           lazy note previews with a modification-time cache
   ui/
-    explorer-view.ts      the browser's ItemView, state and render orchestration
-    explorer-header.ts    breadcrumb and toolbar
-    explorer-rail.ts      collections, spaces and tags
-    explorer-content.ts   cards, rows, folder cards, missing pages, empty states
-    collections.ts        turns a selection into a collection to draw
+    explorer-view.ts      the browser's ItemView, its trail, and history
+    explorer-header.ts    breadcrumb, title and the two controls
+    explorer-body.ts      tiles, sections, lessons, tags, loose ends
     graph-view.ts         the graph's ItemView: toolbar, canvas, interaction
     graph-renderer.ts     canvas drawing, camera transforms, hit testing
     graph-simulation.ts   the force layout and its Barnes-Hut quadtree
@@ -44,7 +43,7 @@ flowchart TD
     C --> D[Folders, notes, tags, links, backlinks, unresolved]
     D -->|notify subscribers| E[ExplorerView]
     D -->|notify subscribers| F[GraphView]
-    E --> G[collections.ts -> filters.ts -> cards]
+    E --> G[navigation.resolvePlace -> filters.ts -> screens]
     E -.->|on demand| H[ExcerptStore.cachedRead]
     F --> I[link-graph.buildGraph]
     I --> J[ForceSimulation.tick]
@@ -92,7 +91,7 @@ configured. `discoverFacets` tallies every tag namespace and every non-reserved
 frontmatter key across the vault and keeps the ones that behave like a category:
 at least three notes, between two and forty distinct values, and values that
 repeat rather than being unique per note. That last ratio is what excludes ids
-and timestamps, which are the two things that would otherwise flood the rail.
+and timestamps, which are the two things that would otherwise flood the hierarchy.
 The result is capped, so a messy vault cannot produce twenty sections.
 
 Two exclusions matter more than the thresholds. Dates are dropped by key and by
@@ -120,7 +119,7 @@ are deliberately forgiving, because a real vault is never uniform:
   which is the escape hatch for a note filed in the wrong place. A tag namespace
   of the same name adds to the values instead of replacing them.
 
-Level *counts* are what make the rail feel like a search rather than a tree.
+Level *counts* are what let a screen say how much is behind each step.
 `countValues` counts a facet's values under every active filter **except its
 own**, which is what lets a year narrow the subject list while leaving all years
 listed so you can switch in one click.
@@ -129,6 +128,29 @@ listed so you can switch in one click.
 tree, naming a level `year` when most of its values look like years. It is
 wired to a button rather than run automatically, so the guess lands in an
 editable box instead of silently deciding the vault's structure.
+
+## The walk
+
+`navigation.ts` turns the levels into a hierarchy to walk. Levels are already
+ordered, so the first is what home offers, the second is what one of those
+contains, and so on. A vault with no levels walks its folders instead, which is
+why an unconfigured vault still browses as a course.
+
+`resolvePlace` answers three questions for any trail: the crumbs back, the
+children one step down with their counts, and the notes that sit at exactly
+this point rather than inside a child. That last distinction is what keeps a
+note filed above its unit visible instead of swallowed.
+
+Every move goes through `leaf.setViewState(..., { history: true })` rather than
+assigning to a field, so Obsidian records it and the tab's back arrow walks the
+trail in reverse — the same history that moves between files.
+
+The same module carries four functions that read the vault the way an
+encyclopaedia reads: `overviewNote` picks the note that names the place it sits
+in, `seeAlso` counts the links leaving a place to find what it leans on,
+`placeCategories` takes the tags its notes share, and `alphabetIndex` files
+every note under its initial. All four are derived, so nothing has to be kept
+up to date by hand.
 
 ## Building the graph
 

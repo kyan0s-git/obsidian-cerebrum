@@ -1,39 +1,40 @@
 import { ItemView, ViewStateResult, WorkspaceLeaf, debounce } from 'obsidian';
 import { EXPLORER_ICON, EXPLORER_VIEW_TYPE, PAGE_SIZE } from '../constants';
 import type { ExcerptStore } from '../core/excerpts';
+import type { TrailStep } from '../core/navigation';
 import type { VaultModel } from '../core/vault-model';
 import type { CerebrumSettings } from '../settings';
-import type { Selection, SmartListId } from '../types';
-import { renderContent } from './explorer-content';
+import { renderBody } from './explorer-body';
 import { renderHeader } from './explorer-header';
-import { renderRail } from './explorer-rail';
 import { openGraph } from './view-actions';
 
+/** Which of the browser's few screens is showing. */
+export type ExplorerScreen = 'browse' | 'tags' | 'tag' | 'all' | 'loose';
+
 export interface ExplorerState {
-	selection: Selection;
-	/** Active facet filters, keyed by facet name. */
-	facets: Record<string, string>;
+	screen: ExplorerScreen;
+	/** The walk down the hierarchy, innermost last. Empty is home. */
+	trail: TrailStep[];
+	/** The tag being read, when the screen is a tag. */
+	tag: string;
 	query: string;
-	/** How many notes of the current result set are rendered. */
+	/** How many notes of the current list are rendered. */
 	visible: number;
 }
 
-/** Everything the explorer's render functions are allowed to touch. */
+/** Everything the browser's render functions are allowed to touch. */
 export interface ExplorerContext {
 	view: ExplorerView;
 	model: VaultModel;
 	excerpts: ExcerptStore;
 	settings: CerebrumSettings;
 	state: ExplorerState;
-	setSelection(selection: Selection): void;
-	/** Sets a facet filter, or clears it when the value is null. */
-	setFacet(name: string, value: string | null): void;
-	clearFacets(): void;
-	/** Opens or closes a rail section, remembering the choice. */
-	toggleSection(title: string): void;
+	/** Moves to another screen, recording it so Back works. */
+	go(state: Partial<ExplorerState>): void;
+	/** Walks one step down the hierarchy. */
+	open(step: TrailStep): void;
 	setQuery(query: string): void;
 	showMore(): void;
-	refresh(): void;
 	persist(): void;
 }
 
@@ -44,28 +45,31 @@ export interface ExplorerDeps {
 	saveSettings: () => Promise<void>;
 }
 
+function emptyState(): ExplorerState {
+	return { screen: 'browse', trail: [], tag: '', query: '', visible: PAGE_SIZE };
+}
+
 /**
- * The content browser. It replaces tree digging with a dashboard: collections
- * on the left, cards in the middle, and a breadcrumb for drilling into folders
- * the vault happens to have right now.
+ * The browser.
+ *
+ * One decision per screen: home offers the first level, each step offers the
+ * next, and the last offers the notes themselves. A breadcrumb sits above
+ * everything, and every move is recorded so the tab's own back arrow walks it
+ * in reverse.
  */
 export class ExplorerView extends ItemView {
 	navigation = true;
 
 	private readonly deps: ExplorerDeps;
-	private state: ExplorerState = {
-		selection: { kind: 'smart', value: 'all' },
-		facets: {},
-		query: '',
-		visible: PAGE_SIZE,
-	};
+	private state: ExplorerState = emptyState();
 	private headerEl!: HTMLElement;
-	private railEl!: HTMLElement;
-	private contentAreaEl!: HTMLElement;
+	private bodyEl!: HTMLElement;
 	private unsubscribe: (() => void) | null = null;
+	/** Set while applying a state Obsidian handed us, to not re-record it. */
+	private restoring = false;
 
 	private readonly render = debounce(() => this.renderAll(), 40, true);
-	private readonly renderResults = debounce(() => this.renderBody(), 120, true);
+	private readonly renderResults = debounce(() => this.renderBodyOnly(), 120, true);
 
 	constructor(leaf: WorkspaceLeaf, deps: ExplorerDeps) {
 		super(leaf);
@@ -78,14 +82,18 @@ export class ExplorerView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return 'Cerebrum';
+		const last = this.state.trail[this.state.trail.length - 1];
+		if (this.state.screen === 'tag' && this.state.tag !== '') {
+			return this.state.tag;
+		}
+		return last ? last.value : 'Cerebrum';
 	}
 
 	getState(): Record<string, unknown> {
 		return {
-			selectionKind: this.state.selection.kind,
-			selectionValue: this.state.selection.value,
-			facets: { ...this.state.facets },
+			screen: this.state.screen,
+			trail: this.state.trail.map((step) => ({ ...step })),
+			tag: this.state.tag,
 			query: this.state.query,
 		};
 	}
@@ -95,25 +103,30 @@ export class ExplorerView extends ItemView {
 			state !== null && typeof state === 'object'
 				? (state as Record<string, unknown>)
 				: {};
-		const kind = record.selectionKind;
-		const value = record.selectionValue;
-		if (typeof kind === 'string' && typeof value === 'string') {
-			this.state.selection = restoreSelection(kind, value);
-			this.state.visible = PAGE_SIZE;
+
+		const next = emptyState();
+		if (typeof record.screen === 'string' && isScreen(record.screen)) {
+			next.screen = record.screen;
 		}
-		if (typeof record.query === 'string') {
-			this.state.query = record.query;
-		}
-		if (record.facets !== null && typeof record.facets === 'object') {
-			this.state.facets = {};
-			for (const [name, value] of Object.entries(
-				record.facets as Record<string, unknown>,
-			)) {
-				if (typeof value === 'string') {
-					this.state.facets[name] = value;
+		if (Array.isArray(record.trail)) {
+			for (const raw of record.trail) {
+				if (raw === null || typeof raw !== 'object') {
+					continue;
+				}
+				const step = raw as Record<string, unknown>;
+				if (typeof step.name === 'string' && typeof step.value === 'string') {
+					next.trail.push({ name: step.name, value: step.value });
 				}
 			}
 		}
+		if (typeof record.tag === 'string') {
+			next.tag = record.tag;
+		}
+		if (typeof record.query === 'string') {
+			next.query = record.query;
+		}
+
+		this.state = next;
 		this.render();
 		await super.setState(state, result);
 	}
@@ -123,20 +136,16 @@ export class ExplorerView extends ItemView {
 		container.empty();
 		container.addClass('cerebrum-explorer');
 
-		this.headerEl = container.createDiv({ cls: 'cerebrum-header' });
-		const body = container.createDiv({ cls: 'cerebrum-body' });
-		this.railEl = body.createDiv({ cls: 'cerebrum-rail' });
-		this.contentAreaEl = body.createDiv({ cls: 'cerebrum-content' });
+		const page = container.createDiv({ cls: 'cerebrum-page' });
+		this.headerEl = page.createDiv({ cls: 'cerebrum-header' });
+		this.bodyEl = page.createDiv({ cls: 'cerebrum-body' });
 
-		// Obsidian puts view actions in the tab header, so this one goes there
-		// rather than adding a sixth control to the toolbar.
-		this.addAction('git-fork', 'Show this selection in the graph', () => {
-			const selection = this.state.selection;
-			const query =
-				selection.kind === 'folder' || selection.kind === 'tag'
-					? selection.value
-					: this.state.query;
-			void openGraph(this.app, { query, focusPath: null });
+		this.addAction('git-fork', 'Show this view in the graph', () => {
+			const last = this.state.trail[this.state.trail.length - 1];
+			void openGraph(this.app, {
+				query: last ? last.value : this.state.query,
+				focusPath: null,
+			});
 		});
 
 		this.unsubscribe = this.deps.model.subscribe(() => this.render());
@@ -150,12 +159,45 @@ export class ExplorerView extends ItemView {
 		this.contentEl.empty();
 	}
 
-	/** Points the explorer at a folder, collection or tag. */
-	reveal(selection: Selection): void {
-		this.state.selection = selection;
-		this.state.facets = {};
-		this.state.visible = PAGE_SIZE;
-		this.render();
+	/** Points the browser at a place, from a command or another view. */
+	reveal(state: Partial<ExplorerState>): void {
+		this.navigate(state);
+	}
+
+	/**
+	 * Every move goes through the workspace rather than straight to the field,
+	 * so Obsidian records it and the tab's back arrow walks the trail in
+	 * reverse — the same way its own file history works.
+	 */
+	private navigate(partial: Partial<ExplorerState>): void {
+		const next: ExplorerState = {
+			...this.state,
+			visible: PAGE_SIZE,
+			...partial,
+		};
+		this.state = next;
+		if (this.restoring) {
+			this.renderAll();
+			return;
+		}
+		this.restoring = true;
+		void this.leaf
+			.setViewState(
+				{
+					type: EXPLORER_VIEW_TYPE,
+					active: true,
+					state: {
+						screen: next.screen,
+						trail: next.trail,
+						tag: next.tag,
+						query: next.query,
+					},
+				},
+				{ history: true },
+			)
+			.finally(() => {
+				this.restoring = false;
+			});
 	}
 
 	private context(): ExplorerContext {
@@ -165,35 +207,15 @@ export class ExplorerView extends ItemView {
 			excerpts: this.deps.excerpts,
 			settings: this.deps.settings,
 			state: this.state,
-			setSelection: (selection) => {
-				this.state.selection = selection;
-				this.state.visible = PAGE_SIZE;
-				this.render();
+			go: (partial) => {
+				this.navigate(partial);
 			},
-			setFacet: (name, value) => {
-				if (value === null) {
-					delete this.state.facets[name];
-				} else {
-					this.state.facets[name] = value;
-				}
-				this.state.visible = PAGE_SIZE;
-				this.render();
-			},
-			clearFacets: () => {
-				this.state.facets = {};
-				this.state.visible = PAGE_SIZE;
-				this.render();
-			},
-			toggleSection: (title) => {
-				const open = this.deps.settings.expandedSections;
-				const index = open.indexOf(title);
-				if (index === -1) {
-					open.push(title);
-				} else {
-					open.splice(index, 1);
-				}
-				void this.deps.saveSettings();
-				this.render();
+			open: (step) => {
+				this.navigate({
+					screen: 'browse',
+					trail: [...this.state.trail, step],
+					query: '',
+				});
 			},
 			setQuery: (query) => {
 				this.state.query = query;
@@ -204,7 +226,6 @@ export class ExplorerView extends ItemView {
 				this.state.visible += PAGE_SIZE;
 				this.renderResults();
 			},
-			refresh: () => this.render(),
 			persist: () => {
 				void this.deps.saveSettings();
 				this.render();
@@ -217,31 +238,17 @@ export class ExplorerView extends ItemView {
 			return;
 		}
 		renderHeader(this.headerEl, this.context());
-		this.renderBody();
+		this.renderBodyOnly();
 	}
 
-	private renderBody(): void {
-		if (!this.contentAreaEl) {
+	private renderBodyOnly(): void {
+		if (!this.bodyEl) {
 			return;
 		}
-		const context = this.context();
-		renderRail(this.railEl, context);
-		renderContent(this.contentAreaEl, context);
+		renderBody(this.bodyEl, this.context());
 	}
 }
 
-const SMART_IDS: SmartListId[] = ['all', 'orphans', 'unresolved'];
-
-function isSmartId(value: string): value is SmartListId {
-	return SMART_IDS.some((id) => id === value);
-}
-
-function restoreSelection(kind: string, value: string): Selection {
-	if (kind === 'folder') {
-		return { kind: 'folder', value };
-	}
-	if (kind === 'tag') {
-		return { kind: 'tag', value };
-	}
-	return { kind: 'smart', value: isSmartId(value) ? value : 'all' };
+function isScreen(value: string): value is ExplorerScreen {
+	return ['browse', 'tags', 'tag', 'all', 'loose'].includes(value);
 }

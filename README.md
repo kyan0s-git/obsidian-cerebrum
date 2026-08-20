@@ -11,29 +11,27 @@ needs no configuration.
 
 ## The browser
 
-Open it from the ribbon (**Browse the vault**) or the command palette.
+The vault reads as a course rather than a file tree. Home offers what you can
+study; stepping in offers what is inside; the last step offers the notes.
 
-- **Spaces** — every folder in the vault, discovered at runtime. The rail lists
-  the top level, then unfolds the branch you are browsing so you never lose the
-  rest of the vault while drilling down.
-- **Vault** — the three views a sort cannot produce: all notes, orphans
-  (nothing in, nothing out), and missing pages (links written for notes that do
-  not exist yet, with the pages asking for them).
-- **Levels** — the dimensions your vault already has, turned into filters.
-  Nested tags (`#status/active`) and frontmatter properties (`type: reference`)
-  are found automatically, with no configuration at all; folder levels take one
-  pattern, `raw/<year>/<subject>/<unit>`. Either way each level becomes a filter
-  of its own: one click for every physics note of 2026, across `raw/`, `wiki/`
-  and anywhere else it lives. Levels narrow each other as you pick them, group
-  the results, and label the cards.
-- **Tags** — every tag in the vault with its note count, as a one-click filter.
-- **Cards** carry a title, two lines of what the note says, and the least
-  context that tells it apart — a level you already filtered by is left off,
-  and link counts wait until hover. One density control switches between a card
-  and a row.
-- Search runs over titles, paths, tags and aliases with Obsidian's own fuzzy
-  matcher. Beside it sit one sort control, whose options carry their own
-  direction, and one grouping control. That is the whole toolbar.
+- **One decision per screen.** Home is a shelf of tiles, a step in is a set of
+  sections with their first few notes, the end is a plain list. Nothing else
+  competes for the same glance.
+- **A breadcrumb on every screen**, and the tab's own back arrow walks the trail
+  in reverse, because each move is recorded in Obsidian's history.
+- **The hierarchy is yours.** Nested tags (`#subject/physics`) and frontmatter
+  properties (`type: reference`) are found automatically; folder levels take one
+  pattern, `raw/<year>/<subject>/<unit>`. With none of those, folders are the
+  hierarchy and it still works.
+- **Tags stay cross-cutting**, like a blog archive: every tag with its count,
+  and a tag page listing its notes wherever they live.
+- **Four devices borrowed from an encyclopaedia**, all read off your notes: the
+  note named for its place leads that screen as *Start here*; *See also* lists
+  the pages the notes here lean on that live elsewhere; *Categories* lists the
+  tags they share; and **All notes** is an A–Z index rather than a long list.
+- **Loose ends** collects what needs fixing rather than reading: pages you have
+  linked but never written, and notes nothing links to.
+- Search narrows to where you are. Sort and density are the only other controls.
 
 ## The graph
 

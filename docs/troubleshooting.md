@@ -36,7 +36,7 @@ only attachments show a count of zero because counts are notes only.
 
 **Include notes from subfolders** is off by default, so a space shows only what
 sits directly in it, not what is nested below. Turn it on in settings, or click
-into the subfolder from the rail or the folder cards.
+into the subfolder by walking down to it.
 
 Attachments are hidden by default too — turn on **Show attachments** to see PDFs
 and images alongside notes.
@@ -53,7 +53,7 @@ In order, check:
 
 Giving a note a `description` in frontmatter always wins over reading the body.
 
-## The rail has too many sections
+## There are too many levels
 
 They are collapsed by default, so the count costs you one row each. If a level
 should not be there at all:

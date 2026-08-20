@@ -12,12 +12,10 @@ each one is.
 | Setting | Default | Where | Effect |
 | --- | --- | --- | --- |
 | Open notes in a new tab | off | Settings | Off, a click reuses the current tab. On, every click opens a new tab. Cmd/Ctrl always does the opposite, middle click always opens a tab, and Cmd/Ctrl+Alt always splits |
-| Include notes from subfolders | off | Settings | Off, a space shows only what sits directly in it. On, it shows everything nested below |
 | Show attachments | off | Settings | Includes images, audio, PDFs and other non-note files in the browser. Folder counts stay note-only either way |
 | Hidden folders | empty | Settings | One folder path per line. Everything inside is excluded from both views, from counts, and from link resolution, so a link into a hidden folder is reported as missing |
 | Density | comfortable | Browser toolbar | Comfortable gives each note a card with an excerpt; compact gives it a row |
 | Sort | newest first | Browser toolbar | Newest, oldest, title A–Z, title Z–A, most linked. Direction is part of the option |
-| Grouping | none | Browser toolbar | None, folder, date, or any level |
 
 Hidden folders are matched by path prefix, so `archive` hides `archive` and
 `archive/2019/notes.md` but not `archived-ideas`. Leading and trailing slashes
@@ -30,7 +28,6 @@ are ignored, and blank lines are dropped.
 | Find levels automatically | on | Settings | Discovers levels from nested tags (`#status/active`) and frontmatter properties used across several notes. Needs no configuration |
 | Levels found | — | Settings | Read-only: what discovery found, with each level's source and note count |
 | Hidden levels | empty | Settings | Level names to leave out of the views, one per line |
-| Open rail sections | Vault | Browser rail | Remembered as you open and close them. Everything else stays collapsed |
 | Folder level patterns | empty | Settings | One pattern per line naming the folder levels, such as `raw/<year>/<subject>/<unit>` |
 | Detect folder levels | — | Settings | Reads your folders and replaces the patterns with one suggestion per top level tree |
 
@@ -78,9 +75,7 @@ it. Values much above `0.2` compress the whole graph into the centre.
   "openInNewTab": false,
   "density": "comfortable",
   "sortKey": "newest",
-  "groupKey": "none",
   "showAttachments": false,
-  "showSubfolderContents": false,
   "excludedFolders": [],
   "facetPatterns": [],
   "autoFacets": true,
@@ -96,7 +91,6 @@ it. Values much above `0.2` compress the whole graph into the centre.
   "graphCenterStrength": 0.05,
   "graphMaxNodes": 2000,
   "graphColorBy": "",
-  "expandedSections": ["Vault"],
   "showAdvanced": false
 }
 ```

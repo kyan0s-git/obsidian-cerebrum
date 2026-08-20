@@ -14,6 +14,7 @@ import {
 	INDEX_DEBOUNCE_MS,
 } from './constants';
 import { ExcerptStore } from './core/excerpts';
+import { FOLDER_AXIS } from './core/navigation';
 import { VaultModel } from './core/vault-model';
 import { CerebrumSettings, mergeSettings } from './settings';
 import { ExplorerView } from './ui/explorer-view';
@@ -120,17 +121,16 @@ export default class CerebrumPlugin extends Plugin {
 		});
 		this.addCommand({
 			id: 'reveal-active-note',
-			name: 'Show the space holding the active note',
+			name: 'Show where the active note sits',
 			checkCallback: (checking: boolean) => {
 				const file = this.app.workspace.getActiveFile();
 				if (!file) {
 					return false;
 				}
 				if (!checking) {
-					const folder = file.parent?.isRoot() ? '' : (file.parent?.path ?? '');
 					void openExplorer(this.app, {
-						selectionKind: 'folder',
-						selectionValue: folder,
+						screen: 'browse',
+						trail: this.trailTo(file.path),
 						query: '',
 					});
 				}
@@ -210,8 +210,10 @@ export default class CerebrumPlugin extends Plugin {
 								.setIcon(EXPLORER_ICON)
 								.onClick(() => {
 									void openExplorer(this.app, {
-										selectionKind: 'folder',
-										selectionValue: file.isRoot() ? '' : file.path,
+										screen: 'browse',
+										trail: file.isRoot()
+											? []
+											: [{ name: FOLDER_AXIS, value: file.path }],
 										query: '',
 									});
 								}),
@@ -220,6 +222,31 @@ export default class CerebrumPlugin extends Plugin {
 				},
 			),
 		);
+	}
+
+	/**
+	 * The walk that leads to a note: its own level values in order, so revealing
+	 * a note lands you where it lives rather than in a flat list of everything.
+	 */
+	private trailTo(path: string): { name: string; value: string }[] {
+		const note = this.model.getNote(path);
+		if (!note) {
+			return [];
+		}
+		const names = this.model.getFacetNames();
+		if (names.length === 0) {
+			const folder = note.folder;
+			return folder === '' ? [] : [{ name: FOLDER_AXIS, value: folder }];
+		}
+		const trail: { name: string; value: string }[] = [];
+		for (const name of names) {
+			const value = note.facets[name]?.[0];
+			if (value === undefined) {
+				break;
+			}
+			trail.push({ name, value });
+		}
+		return trail;
 	}
 
 	/** Views are looked up on demand so no references outlive their leaf. */

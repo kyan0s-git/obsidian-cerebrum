@@ -1,13 +1,11 @@
-import type { Density, GroupKey, SortKey } from './types';
+import type { Density, SortKey } from './types';
 
 export interface CerebrumSettings {
 	/** Explorer */
 	openInNewTab: boolean;
 	density: Density;
 	sortKey: SortKey;
-	groupKey: GroupKey;
 	showAttachments: boolean;
-	showSubfolderContents: boolean;
 	/** Folder paths hidden from every view, one per line. */
 	excludedFolders: string[];
 	/** Patterns naming the folder levels, one per line. */
@@ -16,8 +14,6 @@ export interface CerebrumSettings {
 	autoFacets: boolean;
 	/** Level names to leave out, one per line. */
 	hiddenFacets: string[];
-	/** Rail sections the user has opened. Everything else stays collapsed. */
-	expandedSections: string[];
 	/** Reveal the tuning settings, which most vaults never need. */
 	showAdvanced: boolean;
 
@@ -40,14 +36,11 @@ export const DEFAULT_SETTINGS: CerebrumSettings = {
 	openInNewTab: false,
 	density: 'comfortable',
 	sortKey: 'newest',
-	groupKey: 'none',
 	showAttachments: false,
-	showSubfolderContents: false,
 	excludedFolders: [],
 	facetPatterns: [],
 	autoFacets: true,
 	hiddenFacets: [],
-	expandedSections: ['Vault'],
 	showAdvanced: false,
 
 	graphIncludeAttachments: false,

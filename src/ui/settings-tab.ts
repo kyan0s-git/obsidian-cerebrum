@@ -35,16 +35,6 @@ export class CerebrumSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Include notes from subfolders')
-			.setDesc('Show everything nested inside a space instead of its top level only.')
-			.addToggle((toggle) =>
-				toggle.setValue(settings.showSubfolderContents).onChange((value) => {
-					settings.showSubfolderContents = value;
-					save();
-				}),
-			);
-
-		new Setting(containerEl)
 			.setName('Show attachments')
 			.setDesc('Include images, audio and other attachments alongside notes.')
 			.addToggle((toggle) =>

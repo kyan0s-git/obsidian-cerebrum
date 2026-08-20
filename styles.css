@@ -1,31 +1,39 @@
-/* Cerebrum: content browser and link graph. */
+/* Cerebrum: a vault read as a course, and its link graph. */
 
-/* ---------------------------------------------------------------- explorer */
+/* ------------------------------------------------------------------ browser */
 
 .cerebrum-explorer {
-	display: flex;
-	flex-direction: column;
 	height: 100%;
 	padding: 0;
-	overflow: hidden;
+	overflow-y: auto;
 }
 
-.cerebrum-explorer .cerebrum-header {
+/*
+ * One centred column. Reading is the point, and a line of text that runs the
+ * width of a monitor is not read, it is scanned and abandoned.
+ */
+.cerebrum-page {
+	max-width: 780px;
+	margin: 0 auto;
+	padding: var(--size-4-6) var(--size-4-4) var(--size-4-12);
+}
+
+.cerebrum-header {
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-4-2);
-	padding: var(--size-4-3) var(--size-4-4);
-	border-bottom: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary);
+	margin-bottom: var(--size-4-5);
 }
+
+/* --------------------------------------------------------------- breadcrumb */
 
 .cerebrum-crumbs {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
 	gap: var(--size-2-1);
-	font-size: var(--font-ui-medium);
-	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
 }
 
 .cerebrum-crumb {
@@ -34,12 +42,11 @@
 	gap: var(--size-2-2);
 	padding: 2px var(--size-2-2);
 	border-radius: var(--radius-s);
-	color: var(--text-normal);
+	color: var(--text-muted);
 }
 
 .cerebrum-crumb.is-clickable {
 	cursor: pointer;
-	color: var(--text-muted);
 }
 
 .cerebrum-crumb.is-clickable:hover {
@@ -56,14 +63,34 @@
 
 .cerebrum-crumb-icon .svg-icon,
 .cerebrum-crumb-sep .svg-icon {
-	width: var(--icon-s);
-	height: var(--icon-s);
+	width: var(--icon-xs);
+	height: var(--icon-xs);
+}
+
+/* -------------------------------------------------------------- title, tools */
+
+.cerebrum-intro {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: var(--size-2-3);
+}
+
+.cerebrum-intro-title {
+	font-size: 1.6em;
+	font-weight: var(--font-semibold);
+	line-height: 1.2;
+	color: var(--text-normal);
+}
+
+.cerebrum-intro-count {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
 }
 
 .cerebrum-toolbar {
 	display: flex;
 	align-items: center;
-	flex-wrap: wrap;
 	gap: var(--size-2-2);
 }
 
@@ -71,8 +98,8 @@
 	position: relative;
 	display: flex;
 	align-items: center;
-	flex: 1 1 220px;
-	min-width: 180px;
+	flex: 1;
+	min-width: 0;
 }
 
 .cerebrum-search-icon {
@@ -94,7 +121,7 @@
 }
 
 .cerebrum-select {
-	max-width: 170px;
+	max-width: 150px;
 }
 
 .cerebrum-mode-toggle {
@@ -111,400 +138,358 @@
 	background-color: var(--interactive-accent);
 }
 
-.cerebrum-body {
-	display: flex;
-	flex: 1;
-	min-height: 0;
+/* --------------------------------------------------------------- home tiles */
+
+.cerebrum-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: var(--size-4-2);
 }
 
-/* -------------------------------------------------------------------- rail */
-
-.cerebrum-rail {
-	flex: 0 0 var(--cerebrum-rail-width, 230px);
-	width: var(--cerebrum-rail-width, 230px);
-	padding: var(--size-4-3) var(--size-4-2);
-	overflow-y: auto;
-	border-right: 1px solid var(--background-modifier-border);
-	background-color: var(--background-secondary);
+.cerebrum-tile {
+	padding: var(--size-4-4) var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-top: 3px solid var(--cerebrum-accent, var(--interactive-accent));
+	border-radius: var(--radius-m);
+	background-color: var(--background-primary);
+	cursor: pointer;
+	transition: background-color 120ms ease, transform 120ms ease;
 }
 
-.cerebrum-rail-title {
+.cerebrum-tile:hover {
+	background-color: var(--background-modifier-hover);
+	transform: translateY(-1px);
+}
+
+.cerebrum-tile-name {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-medium);
+	color: var(--text-normal);
+}
+
+.cerebrum-tile-count {
+	margin-top: var(--size-2-1);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
+/* ---------------------------------------------------------- the lead article */
+
+/* The page that explains this place, given a card of its own above the list. */
+.cerebrum-lead {
+	padding: var(--size-4-3) var(--size-4-4);
+	margin-bottom: var(--size-4-5);
+	border: 1px solid var(--background-modifier-border);
+	border-left: 3px solid var(--interactive-accent);
+	border-radius: var(--radius-m);
+	background-color: var(--background-primary-alt);
+	cursor: pointer;
+	transition: background-color 120ms ease;
+}
+
+.cerebrum-lead:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-lead-label {
 	display: flex;
 	align-items: center;
-	gap: var(--size-2-1);
-	padding: var(--size-2-1) var(--size-2-2);
-	margin-bottom: var(--size-2-2);
-	border-radius: var(--radius-s);
+	gap: var(--size-2-2);
 	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-semibold);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: var(--text-faint);
-	cursor: pointer;
-	user-select: none;
 }
 
-.cerebrum-rail-title:hover {
-	color: var(--text-muted);
-	background-color: var(--background-modifier-hover);
-}
-
-.cerebrum-rail-title.is-collapsed {
-	margin-bottom: 0;
-}
-
-.cerebrum-rail-caret {
-	display: inline-flex;
-	color: var(--text-faint);
-}
-
-.cerebrum-rail-caret .svg-icon {
+.cerebrum-lead-icon .svg-icon {
 	width: var(--icon-xs);
 	height: var(--icon-xs);
 }
 
-.cerebrum-rail-title-text {
-	flex: 1;
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-}
-
-/* The chosen value, so a closed section still says what it is doing. */
-.cerebrum-rail-summary {
-	max-width: 90px;
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	padding: 0 var(--size-2-1);
-	border-radius: var(--radius-s);
-	background-color: var(--background-modifier-form-field);
-	color: var(--text-muted);
-	text-transform: none;
-	letter-spacing: 0;
-}
-
-.cerebrum-rail-section + .cerebrum-rail-section {
+.cerebrum-lead-title {
 	margin-top: var(--size-2-2);
-}
-
-.cerebrum-rail-item {
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
-	padding: var(--size-2-1) var(--size-2-3);
-	padding-left: calc(var(--size-2-3) + var(--cerebrum-depth, 0) * 14px);
-	border-radius: var(--radius-s);
-	font-size: var(--font-ui-small);
-	color: var(--text-muted);
-	cursor: pointer;
-}
-
-.cerebrum-rail-item:hover {
-	background-color: var(--background-modifier-hover);
-	color: var(--text-normal);
-}
-
-.cerebrum-rail-item.is-active {
-	background-color: var(--background-modifier-active-hover);
-	color: var(--text-normal);
-	font-weight: var(--font-medium);
-	box-shadow: inset 2px 0 0 0 var(--cerebrum-accent, var(--interactive-accent));
-}
-
-.cerebrum-rail-icon {
-	display: inline-flex;
-	color: var(--cerebrum-accent, var(--text-faint));
-}
-
-.cerebrum-rail-icon .svg-icon {
-	width: var(--icon-s);
-	height: var(--icon-s);
-}
-
-.cerebrum-rail-label {
-	flex: 1;
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-}
-
-.cerebrum-rail-count {
-	font-size: var(--font-ui-smaller);
-	color: var(--text-faint);
-	font-variant-numeric: tabular-nums;
-}
-
-.cerebrum-rail-empty {
-	padding: var(--size-2-2) var(--size-2-3);
-	font-size: var(--font-ui-smaller);
-	color: var(--text-faint);
-}
-
-/* ----------------------------------------------------------------- content */
-
-.cerebrum-content {
-	flex: 1;
-	min-width: 0;
-	padding: var(--size-4-4);
-	overflow-y: auto;
-}
-
-.cerebrum-intro {
-	display: flex;
-	align-items: baseline;
-	gap: var(--size-2-3);
-	margin-bottom: var(--size-4-3);
-}
-
-.cerebrum-intro-title {
-	font-size: var(--font-ui-large);
-	font-weight: var(--font-semibold);
-	color: var(--text-normal);
-}
-
-.cerebrum-intro-count {
-	font-size: var(--font-ui-smaller);
-	color: var(--text-faint);
-	white-space: nowrap;
-}
-
-.cerebrum-folders {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--size-2-3);
-	margin-bottom: var(--size-4-4);
-}
-
-.cerebrum-folder {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--size-2-2);
-	padding: var(--size-2-2) var(--size-2-3);
-	border: 1px solid var(--background-modifier-border);
-	border-left: 3px solid var(--cerebrum-accent, var(--interactive-accent));
-	border-radius: var(--radius-m);
-	background-color: var(--background-secondary);
-	font-size: var(--font-ui-small);
-	color: var(--text-normal);
-	cursor: pointer;
-}
-
-.cerebrum-folder:hover {
-	background-color: var(--background-modifier-hover);
-}
-
-.cerebrum-folder-icon {
-	display: inline-flex;
-	color: var(--cerebrum-accent, var(--text-muted));
-}
-
-.cerebrum-folder-count {
-	font-size: var(--font-ui-smaller);
-	color: var(--text-faint);
-}
-
-.cerebrum-group {
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
-	margin: var(--size-4-3) 0 var(--size-2-3);
-}
-
-.cerebrum-group-label {
-	font-size: var(--font-ui-smaller);
-	font-weight: var(--font-semibold);
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	color: var(--text-muted);
-}
-
-.cerebrum-group-count {
-	padding: 0 var(--size-2-2);
-	border-radius: var(--radius-s);
-	background-color: var(--background-modifier-form-field);
-	font-size: var(--font-ui-smaller);
-	color: var(--text-faint);
-}
-
-.cerebrum-cards {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-	gap: var(--size-4-2);
-}
-
-.cerebrum-rows {
-	display: flex;
-	flex-direction: column;
-}
-
-/*
- * One focal point per card. The title is the only thing at full contrast;
- * everything else steps down in size and colour rather than competing in a
- * container of its own.
- */
-.cerebrum-card {
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-2-2);
-	min-height: 104px;
-	padding: var(--size-4-3);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	background-color: var(--background-primary);
-	cursor: pointer;
-	transition: border-color 120ms ease, background-color 120ms ease;
-}
-
-.cerebrum-card:hover {
-	border-color: var(--background-modifier-border-hover);
-	background-color: var(--background-primary-alt);
-}
-
-/* Rows are the same card with the middle taken out, and a rule between them. */
-.cerebrum-row {
-	display: flex;
-	align-items: baseline;
-	gap: var(--size-4-2);
-	padding: var(--size-2-2) var(--size-2-3);
-	border-bottom: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
-	cursor: pointer;
-}
-
-.cerebrum-row:hover {
-	background-color: var(--background-modifier-hover);
-}
-
-.cerebrum-card-title {
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
-	min-width: 0;
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
 	font-size: var(--font-ui-medium);
-	font-weight: var(--font-medium);
-	line-height: 1.35;
+	font-weight: var(--font-semibold);
 	color: var(--text-normal);
 }
 
-.cerebrum-row .cerebrum-card-title {
-	flex: 1;
+.cerebrum-lead-excerpt {
+	-webkit-line-clamp: 3;
+	font-size: var(--font-ui-small);
 }
 
-.cerebrum-card-icon {
-	display: inline-flex;
-	flex: 0 0 auto;
+/* ------------------------------------------------------- sections, lessons */
+
+.cerebrum-section + .cerebrum-section {
+	margin-top: var(--size-4-6);
+}
+
+.cerebrum-section-header {
+	display: flex;
+	align-items: baseline;
+	gap: var(--size-2-3);
+	padding-bottom: var(--size-2-2);
+	margin-bottom: var(--size-2-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+}
+
+.cerebrum-section-header:hover .cerebrum-section-title {
+	color: var(--text-accent);
+}
+
+.cerebrum-section-title {
+	flex: 1;
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.cerebrum-section-title.is-quiet {
+	margin-bottom: var(--size-2-2);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
 	color: var(--text-faint);
 }
 
-.cerebrum-card-icon .svg-icon {
+.cerebrum-section-count {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	white-space: nowrap;
+}
+
+.cerebrum-lessons {
+	display: flex;
+	flex-direction: column;
+}
+
+/* A lesson row: an icon to anchor the eye, a title, and what it covers. */
+.cerebrum-lesson {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--size-4-2);
+	padding: var(--size-2-3);
+	border-radius: var(--radius-s);
+	cursor: pointer;
+}
+
+.cerebrum-lesson:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-lesson-icon {
+	display: inline-flex;
+	padding-top: 2px;
+	color: var(--text-faint);
+}
+
+.cerebrum-lesson-icon .svg-icon {
 	width: var(--icon-s);
 	height: var(--icon-s);
 }
 
-.cerebrum-card-excerpt {
+.cerebrum-lesson-text {
 	flex: 1;
+	min-width: 0;
+}
+
+.cerebrum-lesson-title {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	color: var(--text-normal);
+	line-height: 1.4;
+}
+
+.cerebrum-lesson-excerpt {
+	margin-top: 2px;
 	font-size: var(--font-ui-smaller);
-	line-height: 1.5;
+	line-height: 1.45;
 	color: var(--text-muted);
 	display: -webkit-box;
-	-webkit-line-clamp: 2;
+	-webkit-line-clamp: 1;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 }
 
-.cerebrum-card-meta {
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
+.cerebrum-lesson-time {
 	font-size: var(--font-ui-smaller);
 	color: var(--text-faint);
-	min-width: 0;
-}
-
-.cerebrum-card-context {
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
-	flex: 1;
-	min-width: 0;
-	overflow: hidden;
 	white-space: nowrap;
+	padding-top: 2px;
 }
 
-/* Context reads as text, not as a row of badges. */
-.cerebrum-card-crumb {
-	overflow: hidden;
-	text-overflow: ellipsis;
+.cerebrum-lesson.is-missing .cerebrum-lesson-title {
+	color: var(--text-muted);
+	font-style: italic;
 }
 
-.cerebrum-card-crumb + .cerebrum-card-crumb::before {
-	content: '·';
-	margin-right: var(--size-2-2);
-	color: var(--text-faint);
+.cerebrum-section-more {
+	margin-top: var(--size-2-2);
+	background: none;
+	border: none;
+	box-shadow: none;
+	padding: var(--size-2-2) var(--size-2-3);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-accent);
+	cursor: pointer;
 }
 
-.cerebrum-card-crumb.is-clickable:hover {
-	color: var(--text-normal);
+.cerebrum-section-more:hover {
 	text-decoration: underline;
+	background: none;
 }
 
-.cerebrum-card-time {
-	white-space: nowrap;
-}
+/* -------------------------------------------------------------------- tags */
 
-/* Connectivity is analysis, not navigation: it waits until you look. */
-.cerebrum-card-links {
-	display: inline-flex;
-	align-items: center;
-	gap: 2px;
-	opacity: 0;
-	transition: opacity 120ms ease;
-}
-
-.cerebrum-card:hover .cerebrum-card-links,
-.cerebrum-row:hover .cerebrum-card-links {
-	opacity: 1;
-}
-
-.cerebrum-link-icon .svg-icon {
-	width: var(--icon-xs);
-	height: var(--icon-xs);
-}
-
-.cerebrum-card-sources {
+.cerebrum-tag-index {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--size-2-1);
-	grid-column: 1;
+	gap: var(--size-2-2);
 }
 
-.cerebrum-source {
-	padding: 1px var(--size-2-2);
-	border-radius: var(--radius-s);
+.cerebrum-tag-chip {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--size-2-2);
+	padding: var(--size-2-1) var(--size-2-3);
+	border-radius: var(--radius-l);
 	background-color: var(--background-modifier-form-field);
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-small);
 	color: var(--text-muted);
+	cursor: pointer;
 }
 
-.cerebrum-source:hover {
+.cerebrum-tag-chip:hover {
 	color: var(--text-normal);
 	background-color: var(--background-modifier-hover);
 }
 
-.cerebrum-row.is-missing {
-	border-left-color: var(--text-faint);
-	border-style: dashed;
+.cerebrum-tag-count {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
 }
 
-.cerebrum-more {
-	display: block;
-	width: 100%;
-	margin-top: var(--size-4-3);
+/* ------------------------------------------------ see also, categories, index */
+
+.cerebrum-refs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
 }
+
+.cerebrum-ref {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-1) var(--size-2-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.cerebrum-ref:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.cerebrum-ref-icon {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+
+.cerebrum-ref-icon .svg-icon {
+	width: var(--icon-xs);
+	height: var(--icon-xs);
+}
+
+/* The article footer: what this place files under. */
+.cerebrum-categories {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--size-2-3);
+	margin-top: var(--size-4-6);
+	padding-top: var(--size-4-3);
+	border-top: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-smaller);
+}
+
+.cerebrum-categories-label {
+	font-weight: var(--font-semibold);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-faint);
+}
+
+.cerebrum-category {
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.cerebrum-category:hover {
+	color: var(--text-accent);
+	text-decoration: underline;
+}
+
+/* The alphabet across the top of the index. */
+.cerebrum-alphabet {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-1);
+	padding-bottom: var(--size-2-3);
+	margin-bottom: var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+}
+
+.cerebrum-alphabet-letter {
+	min-width: 1.5em;
+	padding: var(--size-2-1);
+	border-radius: var(--radius-s);
+	text-align: center;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.cerebrum-alphabet-letter:hover {
+	color: var(--text-on-accent);
+	background-color: var(--interactive-accent);
+	text-decoration: none;
+}
+
+/* --------------------------------------------------------- foot of the home */
+
+.cerebrum-utilities {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-3);
+	margin-top: var(--size-4-8);
+	padding-top: var(--size-4-3);
+	border-top: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-smaller);
+}
+
+.cerebrum-utility {
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.cerebrum-utility:hover {
+	color: var(--text-normal);
+	text-decoration: underline;
+}
+
+/* ------------------------------------------------------------ empty states */
 
 .cerebrum-empty {
 	display: flex;
@@ -630,15 +615,6 @@
 
 /* ------------------------------------------------------------------ mobile */
 
-.is-mobile .cerebrum-rail {
-	flex-basis: 160px;
-	width: 160px;
-}
-
-.is-mobile .cerebrum-cards {
-	grid-template-columns: 1fr;
-}
-
 .is-mobile .cerebrum-graph-legend {
 	display: none;
 }
@@ -714,4 +690,18 @@
 
 .cerebrum-graph-toolbar .cerebrum-facet-chip {
 	background-color: var(--background-primary);
+}
+
+/* ------------------------------------------------------------------ mobile */
+
+.is-mobile .cerebrum-page {
+	padding: var(--size-4-3) var(--size-4-2) var(--size-4-8);
+}
+
+.is-mobile .cerebrum-tiles {
+	grid-template-columns: 1fr 1fr;
+}
+
+.is-mobile .cerebrum-graph-legend {
+	display: none;
 }
