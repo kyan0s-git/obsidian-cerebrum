@@ -145,11 +145,19 @@ Every move goes through `leaf.setViewState(..., { history: true })` rather than
 assigning to a field, so Obsidian records it and the tab's back arrow walks the
 trail in reverse — the same history that moves between files.
 
-The same module carries four functions that read the vault the way an
+`descend` is where a path stops repeating itself: from any point it walks on
+while the next level offers exactly one way and nothing is filed here, so a
+corridor of single-child levels costs one click rather than four. `resolvePlace`
+marks each crumb `forced` when the step before it offered no alternative, which
+is what lets the header fold those steps into one crumb, and `trimRepeat` drops
+a parent's name from a child that already carries it.
+
+The same module carries five functions that read the vault the way an
 encyclopaedia reads: `overviewNote` picks the note that names the place it sits
 in, `seeAlso` counts the links leaving a place to find what it leans on,
 `placeCategories` takes the tags its notes share, and `alphabetIndex` files
-every note under its initial. All four are derived, so nothing has to be kept
+every note under its initial, and `noteContext` says where a note sits in as
+few words as tell it apart. All of them are derived, so nothing has to be kept
 up to date by hand.
 
 ## Building the graph

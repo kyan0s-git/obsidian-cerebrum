@@ -26,19 +26,32 @@ export const FOLDER_AXIS = 'folder';
 
 export interface NavChild {
 	label: string;
-	/** The step taken by opening this child. */
-	step: TrailStep;
+	/**
+	 * The steps taken by opening this child. Usually one, but a run of levels
+	 * that only ever leads one way is walked in a single click rather than
+	 * making you confirm the obvious three times.
+	 */
+	steps: TrailStep[];
 	noteCount: number;
 	/** True when this child has children of its own. */
 	hasChildren: boolean;
 }
 
+export interface NavCrumb {
+	label: string;
+	trail: TrailStep[];
+	/** True when the step before it offered no other way on. */
+	forced: boolean;
+}
+
 export interface NavPlace {
 	/** Every step back to the start, innermost last. */
-	crumbs: { label: string; trail: TrailStep[] }[];
+	crumbs: NavCrumb[];
 	title: string;
 	/** What one level down is called here: "Units", "Folders". */
 	childLabel: string;
+	/** The same, for exactly one of them: "unit", "folder". */
+	childName: string;
 	children: NavChild[];
 	/** Notes at exactly this point, not inside one of the children. */
 	notes: NoteEntry[];
@@ -95,46 +108,124 @@ export function resolvePlace(
 	const folderMode = axes[0] === FOLDER_AXIS;
 	const allNotes = notesForTrail(model, settings, trail);
 
-	const crumbs = [{ label: 'Home', trail: [] as TrailStep[] }];
+	const children = childrenOf(model, settings, trail, axes, allNotes);
+	const crumbs = crumbsFor(model, settings, trail, axes, folderMode);
+	// The heading is the last crumb, so both say the place the same way.
+	const title = crumbs[crumbs.length - 1]?.label ?? 'Home';
+
+	return {
+		crumbs,
+		title,
+		childLabel: folderMode ? 'Folders' : plural(axes[trail.length] ?? ''),
+		childName: folderMode ? 'folder' : (axes[trail.length] ?? ''),
+		children: children.map((child) => ({
+			...child,
+			// A unit called "physics unit 1" inside physics says physics twice.
+			label: trimRepeat(child.label, title),
+		})),
+		notes: allNotes.filter((note) => !isInsideChild(note, trail, axes, folderMode)),
+		allNotes,
+	};
+}
+
+/**
+ * How far a single click should carry you.
+ *
+ * A level that only ever leads one way is not a decision, it is a corridor: a
+ * year holding one subject, a folder holding one folder. Walking it a screen at
+ * a time is the path redundancy that makes a deep vault feel like a chore, so
+ * opening a child walks straight through any corridor behind it.
+ */
+export function descend(
+	model: VaultModel,
+	settings: CerebrumSettings,
+	trail: TrailStep[],
+): TrailStep[] {
+	const axes = navAxes(model);
+	let walked = trail;
+	// The hierarchy is finite, so this cannot run away.
+	for (let depth = 0; depth < axes.length + MAX_FOLDER_DEPTH; depth++) {
+		const here = notesForTrail(model, settings, walked);
+		const children = childrenOf(model, settings, walked, axes, here);
+		const only = children[0];
+		if (children.length !== 1 || only === undefined) {
+			return walked;
+		}
+		// A note filed at this point is a reason to stop: it would be skipped.
+		const folderMode = axes[0] === FOLDER_AXIS;
+		if (here.some((note) => !isInsideChild(note, walked, axes, folderMode))) {
+			return walked;
+		}
+		walked = [...walked, ...only.steps];
+	}
+	return walked;
+}
+
+/** Folders can nest arbitrarily; this is the point at which we stop looking. */
+const MAX_FOLDER_DEPTH = 24;
+
+function childrenOf(
+	model: VaultModel,
+	settings: CerebrumSettings,
+	trail: TrailStep[],
+	axes: string[],
+	scope: NoteEntry[],
+): NavChild[] {
+	return axes[0] === FOLDER_AXIS
+		? folderChildren(model, trail)
+		: levelChildren(trail, axes, scope);
+}
+
+/**
+ * The way back, with each step told apart by whether it was ever a choice. A
+ * step whose parent offered nothing else is folded into the crumb before it, so
+ * the trail reads as the decisions you made rather than every level crossed.
+ */
+function crumbsFor(
+	model: VaultModel,
+	settings: CerebrumSettings,
+	trail: TrailStep[],
+	axes: string[],
+	folderMode: boolean,
+): NavCrumb[] {
+	const crumbs: NavCrumb[] = [{ label: 'Home', trail: [], forced: false }];
+	let previous = 'Home';
 	for (let index = 0; index < trail.length; index++) {
 		const step = trail[index];
 		if (!step) {
 			continue;
 		}
-		crumbs.push({
-			label: folderMode ? lastSegment(step.value) : step.value,
-			trail: trail.slice(0, index + 1),
-		});
+		const prefix = trail.slice(0, index);
+		const siblings = childrenOf(
+			model,
+			settings,
+			prefix,
+			axes,
+			notesForTrail(model, settings, prefix),
+		).length;
+		const text = trimRepeat(label(step, folderMode), previous);
+		crumbs.push({ label: text, trail: trail.slice(0, index + 1), forced: siblings < 2 });
+		previous = text;
 	}
+	return crumbs;
+}
 
-	const children = folderMode
-		? folderChildren(model, settings, trail)
-		: levelChildren(model, settings, trail, axes, allNotes);
-
-	const inChild = new Set<string>();
-	for (const child of children) {
-		for (const note of notesForTrail(model, settings, [...trail, child.step])) {
-			inChild.add(note.path);
-		}
+/** Whether a note sits inside one of this place's children rather than at it. */
+function isInsideChild(
+	note: NoteEntry,
+	trail: TrailStep[],
+	axes: string[],
+	folderMode: boolean,
+): boolean {
+	if (folderMode) {
+		return note.folder !== (trail[trail.length - 1]?.value ?? '');
 	}
-
-	const last = trail[trail.length - 1];
-	return {
-		crumbs,
-		title: last ? (folderMode ? lastSegment(last.value) : last.value) : 'Home',
-		childLabel: folderMode
-			? 'Folders'
-			: plural(axes[trail.length] ?? ''),
-		children,
-		notes: allNotes.filter((note) => !inChild.has(note.path)),
-		allNotes,
-	};
+	const next = axes[trail.length];
+	return next !== undefined && (note.facets[next]?.length ?? 0) > 0;
 }
 
 /** Values of the next level, among the notes that are actually here. */
 function levelChildren(
-	model: VaultModel,
-	settings: CerebrumSettings,
 	trail: TrailStep[],
 	axes: string[],
 	scope: NoteEntry[],
@@ -153,22 +244,18 @@ function levelChildren(
 	return Array.from(counts.entries())
 		.map(([value, noteCount]) => ({
 			label: value,
-			step: { name, value },
+			steps: [{ name, value }],
 			noteCount,
 			hasChildren: hasDeeper,
 		}))
 		.sort((a, b) => compareLabels(a.label, b.label));
 }
 
-function folderChildren(
-	model: VaultModel,
-	settings: CerebrumSettings,
-	trail: TrailStep[],
-): NavChild[] {
+function folderChildren(model: VaultModel, trail: TrailStep[]): NavChild[] {
 	const here = trail[trail.length - 1]?.value ?? '';
 	return model.getChildFolders(here).map((folder: FolderEntry) => ({
 		label: folder.name,
-		step: { name: FOLDER_AXIS, value: folder.path },
+		steps: [{ name: FOLDER_AXIS, value: folder.path }],
 		noteCount: folder.totalCount,
 		hasChildren: folder.childFolders.length > 0,
 	}));
@@ -184,8 +271,28 @@ function compareLabels(a: string, b: string): number {
 	return a.localeCompare(b, undefined, { numeric: true });
 }
 
-function lastSegment(path: string): string {
-	return path.split('/').pop() ?? path;
+function label(step: TrailStep, folderMode: boolean): string {
+	return folderMode ? (step.value.split('/').pop() ?? step.value) : step.value;
+}
+
+/**
+ * Drops what a label already says. "physics unit 1" under physics is "unit 1";
+ * "2026" under "2026" is nothing worth repeating, so it keeps its own name.
+ */
+function trimRepeat(text: string, parent: string): string {
+	const key = normalise(parent);
+	if (key === '' || normalise(text) === key) {
+		return text;
+	}
+	const trimmed = text
+		.replace(new RegExp(`^${escapeRegExp(parent)}[\\s._/-]+`, 'i'), '')
+		.replace(new RegExp(`[\\s._/-]+${escapeRegExp(parent)}$`, 'i'), '')
+		.trim();
+	return trimmed === '' ? text : trimmed;
+}
+
+function escapeRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /** "unit" describes one, "Units" heads a list of them. */
@@ -352,4 +459,21 @@ function normalise(value: string): string {
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, ' ')
 		.trim();
+}
+
+/**
+ * Where a note sits, said as briefly as it can be: the last two things that
+ * distinguish it. An index has no hierarchy of its own, so two notes with the
+ * same name need this to tell them apart — and the levels above stay unsaid,
+ * because every row in the index would repeat them.
+ */
+export function noteContext(model: VaultModel, note: NoteEntry): string {
+	const axes = navAxes(model);
+	const parts =
+		axes[0] === FOLDER_AXIS
+			? note.folder.split('/').filter((part) => part !== '')
+			: axes
+					.map((axis) => note.facets[axis]?.[0])
+					.filter((value): value is string => value !== undefined);
+	return parts.slice(-2).join(' / ');
 }

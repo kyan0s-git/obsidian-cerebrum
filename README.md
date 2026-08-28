@@ -19,6 +19,9 @@ study; stepping in offers what is inside; the last step offers the notes.
   competes for the same glance.
 - **A breadcrumb on every screen**, and the tab's own back arrow walks the trail
   in reverse, because each move is recorded in Obsidian's history.
+- **No path says the same thing twice.** A level that leads only one way is
+  walked in a single click and folded into one crumb; a child that repeats its
+  parent's name drops it; the breadcrumb never ends with the heading below it.
 - **The hierarchy is yours.** Nested tags (`#subject/physics`) and frontmatter
   properties (`type: reference`) are found automatically; folder levels take one
   pattern, `raw/<year>/<subject>/<unit>`. With none of those, folders are the

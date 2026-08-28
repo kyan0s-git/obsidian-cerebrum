@@ -41,9 +41,23 @@ reverse, because each move is recorded the way Obsidian records opening a file.
 | **Home** | One tile per value of your first level — the subjects, or the top folders when you have no levels. Underneath, quiet links to all notes, tags and loose ends |
 | **A step in** | Each value of the next level as a section, with the first few notes under it and a way into the rest — the way a course lists units with their lessons. Underneath: what this place links out to, and the tags it files under |
 | **The last step** | A plain list of notes, in the order you chose |
-| **All notes** | Every note under its initial, with the alphabet across the top |
+| **All notes** | Every note under its initial, with the alphabet across the top. Names only, with where each one sits on the right |
 | **Tags** | Every tag with its count, like a blog archive. A tag lists its notes wherever they live |
 | **Loose ends** | Pages you have linked but never written, and notes nothing links to |
+
+### Paths that only ever lead one way
+
+A level with a single value in it is not a decision, it is a corridor: a year
+holding one subject, a folder holding one folder. Cerebrum walks corridors for
+you — one click carries you past every step that offered no alternative — and
+folds them into a single breadcrumb, so the trail reads as the choices you made
+rather than every level you crossed. A note filed part-way along stops the walk,
+because skipping past it would hide it.
+
+Two other repetitions are trimmed on sight. A child that repeats its parent's
+name reads as the part that is new — `physics unit 1` under **physics** is
+**unit 1** — and the breadcrumb never ends with the name already in the heading
+above it.
 
 ### Four things borrowed from an encyclopaedia
 

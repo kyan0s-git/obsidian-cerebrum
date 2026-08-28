@@ -33,67 +33,88 @@ export function renderHeader(
 }
 
 function renderCrumbs(container: HTMLElement, ctx: ExplorerContext): void {
-	const crumbs = container.createDiv({ cls: 'cerebrum-crumbs' });
-	const state = ctx.state;
+	const steps = crumbSteps(ctx);
+	if (steps.length === 0) {
+		return;
+	}
 
-	const crumb = (
-		label: string,
-		go: (() => void) | null,
-		icon?: string,
-	): void => {
-		const el = crumbs.createEl(go ? 'a' : 'span', {
-			cls: go ? 'cerebrum-crumb is-clickable' : 'cerebrum-crumb',
-		});
+	const crumbs = container.createDiv({ cls: 'cerebrum-crumbs' });
+	const crumb = (label: string, go: () => void, icon?: string): void => {
+		const el = crumbs.createEl('a', { cls: 'cerebrum-crumb' });
 		if (icon) {
 			setIcon(el.createSpan({ cls: 'cerebrum-crumb-icon' }), icon);
 		}
 		el.createSpan({ text: label });
-		if (go) {
-			el.addEventListener('click', go);
-		}
-	};
-	const separator = (): void => {
-		setIcon(
-			crumbs.createSpan({ cls: 'cerebrum-crumb-sep' }),
-			'chevron-right',
-		);
+		el.addEventListener('click', go);
 	};
 
+	steps.forEach((entry, index) => {
+		if (index > 0) {
+			setIcon(
+				crumbs.createSpan({ cls: 'cerebrum-crumb-sep' }),
+				'chevron-right',
+			);
+		}
+		crumb(entry.label, entry.go, index === 0 ? 'home' : undefined);
+	});
+}
+
+/**
+ * The way back, and only that.
+ *
+ * The last step is not a crumb: the title says where you are, and printing it
+ * twice a line apart is the noisiest redundancy the old trail had. Steps that
+ * were never a choice fold into the crumb before them, so a corridor of
+ * single-child levels reads as one hop rather than four.
+ */
+function crumbSteps(
+	ctx: ExplorerContext,
+): { label: string; go: () => void }[] {
+	const state = ctx.state;
 	const home = (): void => {
 		ctx.go({ screen: 'browse', trail: [], tag: '', query: '' });
 	};
 
 	if (state.screen !== 'browse') {
-		crumb('Home', home, 'home');
-		separator();
+		const steps = [{ label: 'Home', go: home }];
 		if (state.screen === 'tag') {
-			crumb('Tags', () => {
-				ctx.go({ screen: 'tags', tag: '', query: '' });
+			steps.push({
+				label: 'Tags',
+				go: () => {
+					ctx.go({ screen: 'tags', tag: '', query: '' });
+				},
 			});
-			separator();
-			crumb(state.tag, null);
-			return;
 		}
-		crumb(screenLabel(state.screen), null);
-		return;
+		return steps;
+	}
+
+	if (state.trail.length === 0) {
+		return [];
 	}
 
 	const place = resolvePlace(ctx.model, ctx.settings, state.trail);
-	place.crumbs.forEach((entry, index) => {
-		const isLast = index === place.crumbs.length - 1;
-		if (index > 0) {
-			separator();
+	const steps: { label: string; go: () => void }[] = [
+		{ label: 'Home', go: home },
+	];
+	// Home is already there, and the last crumb is dropped: the title says it.
+	for (const entry of place.crumbs.slice(1, -1)) {
+		const previous = steps[steps.length - 1];
+		// Never fold into Home: a crumb reading "Home" has to go home.
+		if (entry.forced && previous && steps.length > 1) {
+			previous.label = `${previous.label} / ${entry.label}`;
+			previous.go = (): void => {
+				ctx.go({ screen: 'browse', trail: entry.trail, query: '' });
+			};
+			continue;
 		}
-		crumb(
-			entry.label,
-			isLast
-				? null
-				: () => {
-						ctx.go({ screen: 'browse', trail: entry.trail, query: '' });
-					},
-			index === 0 ? 'home' : undefined,
-		);
-	});
+		steps.push({
+			label: entry.label,
+			go: () => {
+				ctx.go({ screen: 'browse', trail: entry.trail, query: '' });
+			},
+		});
+	}
+	return steps;
 }
 
 /** The heading, and what this screen holds. */
@@ -117,8 +138,8 @@ function renderTitle(container: HTMLElement, ctx: ExplorerContext): void {
 	});
 
 	const parts: string[] = [];
-	if (place.children.length > 0 && place.childLabel !== '') {
-		parts.push(`${place.children.length} ${place.childLabel.toLowerCase()}`);
+	if (place.children.length > 0 && place.childName !== '') {
+		parts.push(formatCount(place.children.length, place.childName.toLowerCase()));
 	}
 	parts.push(formatCount(place.allNotes.length, 'note'));
 	row.createDiv({ cls: 'cerebrum-intro-count', text: parts.join(' · ') });

@@ -3,11 +3,10 @@ import { EXPLORER_VIEW_TYPE, PAGE_SIZE } from '../constants';
 import { searchNotes, sortNotes } from '../core/filters';
 import {
 	AlphaBucket,
-	FOLDER_AXIS,
 	NavChild,
 	Reference,
-	TrailStep,
 	alphabetIndex,
+	noteContext,
 	notesForTrail,
 	overviewNote,
 	placeCategories,
@@ -30,8 +29,11 @@ const SEE_ALSO_LIMIT = 6;
 /** Tags listed as the place's categories. */
 const CATEGORY_LIMIT = 8;
 
-export function renderBody(container: HTMLElement, ctx: ExplorerContext): void {
-	container.empty();
+export function renderBody(holder: HTMLElement, ctx: ExplorerContext): void {
+	holder.empty();
+	// One column with one gap, so every block sits the same distance from the
+	// next whatever it is. Per-block margins drifted apart and collapsed.
+	const container = holder.createDiv({ cls: 'cerebrum-blocks' });
 
 	if (ctx.state.query.trim() !== '') {
 		renderSearch(container, ctx);
@@ -210,17 +212,24 @@ function renderIndex(container: HTMLElement, ctx: ExplorerContext): void {
 	const buckets: AlphaBucket[] = alphabetIndex(notes);
 
 	const jump = container.createDiv({ cls: 'cerebrum-alphabet' });
-	const sections = container.createDiv();
+	const sections = container.createDiv({ cls: 'cerebrum-blocks' });
 
 	for (const bucket of buckets) {
-		const section = sections.createDiv({ cls: 'cerebrum-section' });
+		const section = sections.createDiv({
+			cls: 'cerebrum-section cerebrum-index-group',
+		});
 		section.createDiv({
 			cls: 'cerebrum-section-title is-quiet',
 			text: bucket.letter,
 		});
 		const list = section.createDiv({ cls: 'cerebrum-lessons' });
 		for (const note of bucket.notes) {
-			renderLesson(list, ctx, note);
+			// An index is a list of names. A line of prose under each one is the
+			// wall of text it exists to replace.
+			renderLesson(list, ctx, note, {
+				excerpt: false,
+				meta: noteContext(ctx.model, note),
+			});
 		}
 		// The jump holds the section itself, so no lookup can go stale.
 		const letter = jump.createEl('a', {
@@ -249,7 +258,7 @@ function renderTiles(
 			text: formatCount(child.noteCount, 'note'),
 		});
 		tile.addEventListener('click', () => {
-			ctx.open(child.step);
+			ctx.open(child.steps);
 		});
 	}
 }
@@ -269,11 +278,11 @@ function renderSection(
 		text: formatCount(child.noteCount, 'note'),
 	});
 	header.addEventListener('click', () => {
-		ctx.open(child.step);
+		ctx.open(child.steps);
 	});
 
 	const notes = sortNotes(
-		notesForTrail(ctx.model, ctx.settings, [...ctx.state.trail, child.step]),
+		notesForTrail(ctx.model, ctx.settings, [...ctx.state.trail, ...child.steps]),
 		ctx.settings.sortKey,
 	);
 	const list = section.createDiv({ cls: 'cerebrum-lessons' });
@@ -286,7 +295,7 @@ function renderSection(
 			text: `See all ${notes.length}`,
 		});
 		more.addEventListener('click', () => {
-			ctx.open(child.step);
+			ctx.open(child.steps);
 		});
 	}
 }
@@ -327,6 +336,7 @@ function renderLesson(
 	container: HTMLElement,
 	ctx: ExplorerContext,
 	note: NoteEntry,
+	options: { excerpt?: boolean; meta?: string } = {},
 ): void {
 	const file = ctx.view.app.vault.getFileByPath(note.path);
 	const row = container.createDiv({ cls: 'cerebrum-lesson' });
@@ -336,13 +346,13 @@ function renderLesson(
 
 	const text = row.createDiv({ cls: 'cerebrum-lesson-text' });
 	text.createDiv({ cls: 'cerebrum-lesson-title', text: note.title });
-	if (ctx.settings.density === 'comfortable') {
+	if ((options.excerpt ?? true) && ctx.settings.density === 'comfortable') {
 		renderExcerpt(text, ctx, note, file);
 	}
 
 	row.createSpan({
 		cls: 'cerebrum-lesson-time',
-		text: formatRelativeTime(note.modified),
+		text: options.meta ?? formatRelativeTime(note.modified),
 	});
 
 	if (!file) {
@@ -536,8 +546,3 @@ function renderEmpty(container: HTMLElement, ctx: ExplorerContext): void {
 	});
 }
 
-export function stepLabel(step: TrailStep): string {
-	return step.name === FOLDER_AXIS
-		? (step.value.split('/').pop() ?? step.value)
-		: step.value;
-}

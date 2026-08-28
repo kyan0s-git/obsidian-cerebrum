@@ -21,8 +21,20 @@
 .cerebrum-header {
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-4-2);
-	margin-bottom: var(--size-4-5);
+	/* The crumbs and the title are one unit; the toolbar is the next. */
+	gap: var(--size-2-1);
+	margin-bottom: var(--size-4-6);
+}
+
+.cerebrum-header .cerebrum-toolbar {
+	margin-top: var(--size-4-3);
+}
+
+/* The one vertical rhythm the body has. */
+.cerebrum-blocks {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-7);
 }
 
 /* --------------------------------------------------------------- breadcrumb */
@@ -41,17 +53,21 @@
 	align-items: center;
 	gap: var(--size-2-2);
 	padding: 2px var(--size-2-2);
+	margin-left: calc(-1 * var(--size-2-2));
 	border-radius: var(--radius-s);
 	color: var(--text-muted);
-}
-
-.cerebrum-crumb.is-clickable {
 	cursor: pointer;
 }
 
-.cerebrum-crumb.is-clickable:hover {
+.cerebrum-crumb + .cerebrum-crumb,
+.cerebrum-crumb-sep + .cerebrum-crumb {
+	margin-left: 0;
+}
+
+.cerebrum-crumb:hover {
 	color: var(--text-normal);
 	background-color: var(--background-modifier-hover);
+	text-decoration: none;
 }
 
 .cerebrum-crumb-icon,
@@ -178,7 +194,6 @@
 /* The page that explains this place, given a card of its own above the list. */
 .cerebrum-lead {
 	padding: var(--size-4-3) var(--size-4-4);
-	margin-bottom: var(--size-4-5);
 	border: 1px solid var(--background-modifier-border);
 	border-left: 3px solid var(--interactive-accent);
 	border-radius: var(--radius-m);
@@ -221,8 +236,11 @@
 
 /* ------------------------------------------------------- sections, lessons */
 
-.cerebrum-section + .cerebrum-section {
-	margin-top: var(--size-4-6);
+/* A section is a heading and its list, with one gap between every part. */
+.cerebrum-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-3);
 }
 
 .cerebrum-section-header {
@@ -230,7 +248,6 @@
 	align-items: baseline;
 	gap: var(--size-2-3);
 	padding-bottom: var(--size-2-2);
-	margin-bottom: var(--size-2-2);
 	border-bottom: 1px solid var(--background-modifier-border);
 	cursor: pointer;
 }
@@ -247,7 +264,6 @@
 }
 
 .cerebrum-section-title.is-quiet {
-	margin-bottom: var(--size-2-2);
 	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-semibold);
 	letter-spacing: 0.06em;
@@ -261,9 +277,14 @@
 	white-space: nowrap;
 }
 
+/*
+ * Pulled out by the row padding so a lesson's icon lines up with the heading
+ * above it, and the hover band reaches past the text on both sides.
+ */
 .cerebrum-lessons {
 	display: flex;
 	flex-direction: column;
+	margin: 0 calc(-1 * var(--size-2-3));
 }
 
 /* A lesson row: an icon to anchor the eye, a title, and what it covers. */
@@ -328,7 +349,8 @@
 }
 
 .cerebrum-section-more {
-	margin-top: var(--size-2-2);
+	align-self: flex-start;
+	margin-left: calc(-1 * var(--size-2-3));
 	background: none;
 	border: none;
 	box-shadow: none;
@@ -414,7 +436,6 @@
 	flex-wrap: wrap;
 	align-items: baseline;
 	gap: var(--size-2-3);
-	margin-top: var(--size-4-6);
 	padding-top: var(--size-4-3);
 	border-top: 1px solid var(--background-modifier-border);
 	font-size: var(--font-ui-smaller);
@@ -437,16 +458,20 @@
 	text-decoration: underline;
 }
 
-/* The alphabet across the top of the index. */
+/*
+ * The alphabet across the top of the index. It stays put while the index
+ * scrolls under it, so it needs to be opaque and to cover the full column
+ * rather than only the letters' own boxes.
+ */
 .cerebrum-alphabet {
 	position: sticky;
 	top: 0;
-	z-index: 1;
+	z-index: 2;
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--size-2-1);
-	padding-bottom: var(--size-2-3);
-	margin-bottom: var(--size-4-3);
+	padding: var(--size-2-3) var(--size-4-4);
+	margin: calc(-1 * var(--size-2-3)) calc(-1 * var(--size-4-4)) 0;
 	border-bottom: 1px solid var(--background-modifier-border);
 	background-color: var(--background-primary);
 }
@@ -461,6 +486,14 @@
 	cursor: pointer;
 }
 
+/* In the index the letter is the anchor, so it carries more weight than the
+   quiet headings elsewhere. */
+.cerebrum-index-group .cerebrum-section-title {
+	font-size: var(--font-ui-medium);
+	letter-spacing: 0;
+	color: var(--text-muted);
+}
+
 .cerebrum-alphabet-letter:hover {
 	color: var(--text-on-accent);
 	background-color: var(--interactive-accent);
@@ -473,7 +506,6 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--size-4-3);
-	margin-top: var(--size-4-8);
 	padding-top: var(--size-4-3);
 	border-top: 1px solid var(--background-modifier-border);
 	font-size: var(--font-ui-smaller);
@@ -613,20 +645,7 @@
 	color: var(--text-faint);
 }
 
-/* ------------------------------------------------------------------ mobile */
-
-.is-mobile .cerebrum-graph-legend {
-	display: none;
-}
-
 /* ------------------------------------------------------------------ facets */
-
-.cerebrum-facet-chips {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: var(--size-2-2);
-}
 
 .cerebrum-facet-chip {
 	display: inline-flex;
@@ -671,28 +690,15 @@
 	color: var(--text-normal);
 }
 
-.cerebrum-facet-clear {
-	padding: 1px var(--size-2-2);
-	font-size: var(--font-ui-smaller);
-	background: none;
-	border: none;
-	color: var(--text-muted);
-	cursor: pointer;
-	box-shadow: none;
-}
-
-.cerebrum-facet-clear:hover {
-	color: var(--text-normal);
-	text-decoration: underline;
-}
-
-
-
 .cerebrum-graph-toolbar .cerebrum-facet-chip {
 	background-color: var(--background-primary);
 }
 
 /* ------------------------------------------------------------------ mobile */
+
+.is-mobile .cerebrum-graph-legend {
+	display: none;
+}
 
 .is-mobile .cerebrum-page {
 	padding: var(--size-4-3) var(--size-4-2) var(--size-4-8);
@@ -700,8 +706,4 @@
 
 .is-mobile .cerebrum-tiles {
 	grid-template-columns: 1fr 1fr;
-}
-
-.is-mobile .cerebrum-graph-legend {
-	display: none;
 }

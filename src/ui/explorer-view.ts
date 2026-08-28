@@ -1,6 +1,7 @@
 import { ItemView, ViewStateResult, WorkspaceLeaf, debounce } from 'obsidian';
 import { EXPLORER_ICON, EXPLORER_VIEW_TYPE, PAGE_SIZE } from '../constants';
 import type { ExcerptStore } from '../core/excerpts';
+import { descend } from '../core/navigation';
 import type { TrailStep } from '../core/navigation';
 import type { VaultModel } from '../core/vault-model';
 import type { CerebrumSettings } from '../settings';
@@ -31,8 +32,8 @@ export interface ExplorerContext {
 	state: ExplorerState;
 	/** Moves to another screen, recording it so Back works. */
 	go(state: Partial<ExplorerState>): void;
-	/** Walks one step down the hierarchy. */
-	open(step: TrailStep): void;
+	/** Walks down the hierarchy, straight through anything with one way on. */
+	open(steps: TrailStep[]): void;
 	setQuery(query: string): void;
 	showMore(): void;
 	persist(): void;
@@ -210,10 +211,13 @@ export class ExplorerView extends ItemView {
 			go: (partial) => {
 				this.navigate(partial);
 			},
-			open: (step) => {
+			open: (steps) => {
 				this.navigate({
 					screen: 'browse',
-					trail: [...this.state.trail, step],
+					trail: descend(this.deps.model, this.deps.settings, [
+						...this.state.trail,
+						...steps,
+					]),
 					query: '',
 				});
 			},

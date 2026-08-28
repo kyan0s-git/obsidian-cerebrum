@@ -125,25 +125,6 @@ export class VaultModel {
 		return children.sort((a, b) => a.name.localeCompare(b.name));
 	}
 
-	/**
-	 * Top level folders of the vault, discovered at rebuild time. This is what
-	 * the explorer calls a "space".
-	 */
-	getSpaces(): FolderEntry[] {
-		return this.getChildFolders('');
-	}
-
-	/** Notes directly inside a folder, or anywhere below it. */
-	getNotesInFolder(path: string, recursive: boolean): NoteEntry[] {
-		const prefix = path === '' ? '' : `${path}/`;
-		return this.getAllNotes().filter((note) => {
-			if (recursive) {
-				return path === '' || note.path.startsWith(prefix);
-			}
-			return note.folder === path;
-		});
-	}
-
 	getNotesWithTag(tag: string): NoteEntry[] {
 		return this.getAllNotes().filter((note) => note.tags.includes(tag));
 	}
