@@ -14,6 +14,7 @@ import {
 	FacetRule,
 	countValues,
 	dedupeFacets,
+	detectRules,
 	discoverFacets,
 	facetsForNote,
 	parseRules,
@@ -67,8 +68,8 @@ export class VaultModel {
 		this.tagCounts.clear();
 		this.unresolved.clear();
 
-		this.rules = parseRules(this.settings().facetPatterns);
 		this.indexFolders();
+		this.rules = this.resolveRules();
 		this.indexFiles();
 		this.indexFacets();
 		this.indexLinks();
@@ -303,6 +304,29 @@ export class VaultModel {
 	 * property only becomes a level once enough notes share its values, which
 	 * cannot be known one note at a time.
 	 */
+	/**
+	 * The patterns to read paths with.
+	 *
+	 * Written ones win: they are the user saying what their folders mean. With
+	 * none written, the shape of the vault is read off the folders themselves,
+	 * because a plugin that can work out the patterns but only if you find the
+	 * button has not worked anything out for anybody.
+	 */
+	private resolveRules(): FacetRule[] {
+		const settings = this.settings();
+		const written = parseRules(settings.facetPatterns);
+		if (written.length > 0 || !settings.autoFacets) {
+			return written;
+		}
+		return parseRules(
+			detectRules(
+				this.getAllFolders()
+					.map((folder) => folder.path)
+					.filter((path) => path !== ''),
+			),
+		);
+	}
+
 	private indexFacets(): void {
 		const settings = this.settings();
 		this.facetOrder = patternNames(this.rules);

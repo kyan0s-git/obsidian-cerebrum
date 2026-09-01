@@ -26,6 +26,13 @@ export type FacetSource = 'path' | 'tag' | 'property';
 type PatternSegment =
 	| { kind: 'literal'; value: string }
 	| { kind: 'capture'; name: string }
+	/**
+	 * `<shelf=raw>`: matches only this folder, and records it as a value of the
+	 * level. It is what lets several trees of the same shape be described as one
+	 * hierarchy — `raw/`, `personal/` and `wiki/` are not three subjects, they
+	 * are three kinds of material about the same subjects.
+	 */
+	| { kind: 'pin'; name: string; value: string }
 	| { kind: 'any' }
 	| { kind: 'rest' };
 
@@ -55,8 +62,12 @@ export interface FacetCount {
 
 const YEAR_PATTERN = /^(?:19|20)\d{2}(?:[-/–]\d{2,4})?$/;
 
-/** Names suggested for detected path levels, after any year level. */
-const SUGGESTED_NAMES = ['category', 'topic', 'subtopic', 'section'];
+/**
+ * Names suggested for detected path levels, after any year level. Concrete
+ * words a reader can picture, because they become the headings: "Subjects",
+ * "Units". "Category" and "topic" describe the machinery, not the vault.
+ */
+const SUGGESTED_NAMES = ['subject', 'unit', 'section', 'part'];
 
 /** Frontmatter keys that are Obsidian's own, or prose rather than a category. */
 const RESERVED_KEYS = new Set([
@@ -129,9 +140,15 @@ export function parseRules(lines: string[]): FacetRule[] {
 				segments.push({ kind: 'any' });
 				continue;
 			}
-			const capture = /^<\s*([^>]+?)\s*>$/.exec(part);
+			const capture = /^<\s*([^=>]+?)\s*(?:=\s*([^>]+?)\s*)?>$/.exec(part);
 			if (capture?.[1]) {
-				segments.push({ kind: 'capture', name: capture[1].toLowerCase() });
+				const name = capture[1].toLowerCase();
+				const pinned = capture[2];
+				segments.push(
+					pinned === undefined
+						? { kind: 'capture', name }
+						: { kind: 'pin', name, value: pinned },
+				);
 				continue;
 			}
 			segments.push({ kind: 'literal', value: part });
@@ -143,17 +160,73 @@ export function parseRules(lines: string[]): FacetRule[] {
 	return rules;
 }
 
-/** Level names in the order the patterns declare them. */
+/**
+ * Level names in the order they are walked.
+ *
+ * Levels every rule declares come first: those are the hierarchy itself, and
+ * they are the same wherever you enter it. Pinned levels come next, however
+ * early in the path they sit, because they name a fixed countable set — there
+ * will only ever be three shelves — and a hierarchy that opens by asking which
+ * shelf you want has answered nothing.
+ *
+ * Levels only some rules declare come last, after the pin. A level that exists
+ * inside one tree cannot be asked about before you know which tree you are in:
+ * `sources` and `papers` are both "kind", and offering them together, before
+ * the shelf that tells them apart, is the confusion this ordering exists to
+ * prevent.
+ */
 export function patternNames(rules: FacetRule[]): string[] {
-	const names: string[] = [];
+	const order: string[] = [];
+	const pinned: string[] = [];
+	/** Free level names by the position they hold among a rule's captures. */
+	const atPosition: Map<number, Set<string>> = new Map();
+	const declaring = new Map<string, number>();
+
 	for (const rule of rules) {
+		let position = 0;
+		const seen = new Set<string>();
 		for (const segment of rule.segments) {
-			if (segment.kind === 'capture' && !names.includes(segment.name)) {
-				names.push(segment.name);
+			if (segment.kind === 'pin') {
+				if (!pinned.includes(segment.name)) {
+					pinned.push(segment.name);
+				}
+				continue;
 			}
+			if (segment.kind !== 'capture') {
+				continue;
+			}
+			if (!order.includes(segment.name)) {
+				order.push(segment.name);
+			}
+			if (!seen.has(segment.name)) {
+				seen.add(segment.name);
+				declaring.set(segment.name, (declaring.get(segment.name) ?? 0) + 1);
+			}
+			const names = atPosition.get(position) ?? new Set<string>();
+			names.add(segment.name);
+			atPosition.set(position, names);
+			position++;
 		}
 	}
-	return names;
+
+	/** True when the rules disagree about what belongs at this level's place. */
+	const contested = (name: string): boolean => {
+		for (const names of atPosition.values()) {
+			if (names.has(name) && names.size > 1) {
+				return true;
+			}
+		}
+		return false;
+	};
+	// Declared by every rule, or nothing else claims its place: hierarchy.
+	const early = (name: string): boolean =>
+		declaring.get(name) === rules.length || !contested(name);
+
+	return [
+		...order.filter(early),
+		...pinned.filter((name) => !order.includes(name)),
+		...order.filter((name) => !early(name)),
+	];
 }
 
 /**
@@ -194,6 +267,13 @@ function matchRule(folders: string[], rule: FacetRule): FacetValues | null {
 			if (segment.value.toLowerCase() !== folder.toLowerCase()) {
 				return null;
 			}
+			continue;
+		}
+		if (segment.kind === 'pin') {
+			if (segment.value.toLowerCase() !== folder.toLowerCase()) {
+				return null;
+			}
+			values[segment.name] = [folder];
 			continue;
 		}
 		if (segment.kind === 'capture') {
@@ -521,55 +601,193 @@ export function isYearLike(value: string): boolean {
 // ------------------------------------------------------------ path detection
 
 /**
- * Guesses patterns from the vault's own shape, one per top level folder, so the
- * settings box starts from something real that the user can rename. A level
- * whose values look like years is named `year`; the rest take names in order.
+ * Reads the shape of a vault's folders and proposes patterns for it.
+ *
+ * See `clusterCells` for why the trees are aligned by the names they use
+ * rather than by how deep those names sit.
  */
-export function detectRules(folderPaths: string[], maxDepth = 4): string[] {
+export function detectRules(folderPaths: string[], maxDepth = 6): string[] {
 	const trees = new Map<string, string[][]>();
 	for (const path of folderPaths) {
 		const segments = path.split('/').filter((segment) => segment !== '');
 		const top = segments[0];
-		if (top === undefined) {
+		if (top === undefined || segments.length < 2) {
 			continue;
 		}
 		const list = trees.get(top) ?? [];
 		list.push(segments);
 		trees.set(top, list);
 	}
+	if (trees.size === 0) {
+		return [];
+	}
 
-	const patterns: string[] = [];
-	for (const [top, paths] of Array.from(trees.entries()).sort()) {
-		const depth = Math.min(
-			maxDepth,
-			paths.reduce((max, segments) => Math.max(max, segments.length), 0),
-		);
-		const names: string[] = [];
-		let suggestion = 0;
-		for (let level = 1; level < depth; level++) {
+	const cells = collectCells(trees, maxDepth);
+	const levels = clusterCells(cells);
+	nameLevels(levels, cells);
+	return writeRules(trees, levels, maxDepth);
+}
+
+/** The set of folder names one tree uses at one depth. */
+interface Cell {
+	root: string;
+	depth: number;
+	values: Set<string>;
+}
+
+/** A level: the cells across trees that are filled from the same vocabulary. */
+interface Level {
+	cells: Cell[];
+	values: Set<string>;
+	name: string;
+}
+
+function collectCells(
+	trees: Map<string, string[][]>,
+	maxDepth: number,
+): Cell[] {
+	const cells: Cell[] = [];
+	for (const [root, paths] of trees) {
+		for (let depth = 1; depth <= maxDepth; depth++) {
 			const values = new Set<string>();
 			for (const segments of paths) {
-				const value = segments[level];
+				const value = segments[depth];
 				if (value !== undefined) {
 					values.add(value);
 				}
 			}
-			if (values.size === 0) {
-				continue;
+			if (values.size > 0) {
+				cells.push({ root, depth, values });
 			}
-			if (looksLikeYears(values) && !names.includes('year')) {
-				names.push('year');
-				continue;
-			}
-			names.push(SUGGESTED_NAMES[suggestion] ?? `level${level}`);
-			suggestion++;
 		}
-		if (names.length === 0) {
+	}
+	return cells;
+}
+
+/** Two folder vocabularies this alike are the same level, wherever they sit. */
+const SAME_LEVEL = 0.4;
+
+/**
+ * Groups cells into levels by the names they are filled with.
+ *
+ * Depth is the wrong thing to align trees by. `raw/<year>/<class>/unit-1` and
+ * `wiki/<year>/<class>/sources/unit-1` describe the same unit, and aligning
+ * those two trees by depth files `sources` and `unit-1` as the same kind of
+ * thing — which is exactly how a folder of summaries ends up looking like a
+ * sibling of a unit. What actually identifies a level is the vocabulary it
+ * draws on: the units are wherever `unit-1` appears.
+ */
+function clusterCells(cells: Cell[]): Level[] {
+	const levels: Level[] = [];
+	for (const cell of [...cells].sort((a, b) => a.depth - b.depth)) {
+		const match = levels.find(
+			(level) =>
+				!level.cells.some((other) => other.root === cell.root) &&
+				overlap(level.values, cell.values) >= SAME_LEVEL,
+		);
+		if (match) {
+			match.cells.push(cell);
+			for (const value of cell.values) {
+				match.values.add(value);
+			}
 			continue;
 		}
-		patterns.push(`${top}/${names.map((name) => `<${name}>`).join('/')}`);
+		levels.push({ cells: [cell], values: new Set(cell.values), name: '' });
 	}
-	return patterns;
+	return levels;
+}
+
+/** How much of the smaller vocabulary the two share. */
+function overlap(a: Set<string>, b: Set<string>): number {
+	const smaller = a.size <= b.size ? a : b;
+	const larger = smaller === a ? b : a;
+	if (smaller.size === 0) {
+		return 0;
+	}
+	let shared = 0;
+	for (const value of smaller) {
+		if (larger.has(value)) {
+			shared++;
+		}
+	}
+	return shared / smaller.size;
+}
+
+/**
+ * Levels every tree shares are the hierarchy and get named for what they are.
+ * A level only one tree has is that tree's own way of filing things, so they
+ * all become one "kind" level, sorted after the shared ones by the rule that a
+ * kind of material is a refinement of a place, not a place of its own.
+ */
+function nameLevels(levels: Level[], cells: Cell[]): void {
+	const shared = levels
+		.filter((level) => level.cells.length > 1 || isUncontested(level, cells))
+		.sort((a, b) => minDepth(a) - minDepth(b));
+	let suggestion = 0;
+	let years = false;
+	for (const level of shared) {
+		if (!years && looksLikeYears(level.values)) {
+			level.name = 'year';
+			years = true;
+			continue;
+		}
+		level.name = SUGGESTED_NAMES[suggestion] ?? `level${suggestion + 1}`;
+		suggestion++;
+	}
+	for (const level of levels) {
+		if (level.name === '') {
+			level.name = 'kind';
+		}
+	}
+}
+
+/**
+ * True when no other tree files anything at this depth at all. One tree simply
+ * reaching deeper than the others is still the hierarchy — it is only a kind of
+ * material when another tree puts something *different* in the same place.
+ */
+function isUncontested(level: Level, cells: Cell[]): boolean {
+	return !cells.some(
+		(cell) =>
+			!level.cells.includes(cell) &&
+			level.cells.some(
+				(own) => own.depth === cell.depth && own.root !== cell.root,
+			),
+	);
+}
+
+function minDepth(level: Level): number {
+	return level.cells.reduce((min, cell) => Math.min(min, cell.depth), Infinity);
+}
+
+/** One rule per tree, with the tree itself pinned as the level that sorts last. */
+function writeRules(
+	trees: Map<string, string[][]>,
+	levels: Level[],
+	maxDepth: number,
+): string[] {
+	const rules: string[] = [];
+	// A pin with one possible value is a question with one answer.
+	const pin = trees.size > 1;
+	for (const root of Array.from(trees.keys()).sort()) {
+		const parts: string[] = [pin ? `<shelf=${root}>` : root];
+		let deepest = 0;
+		for (let depth = 1; depth <= maxDepth; depth++) {
+			const level = levels.find((entry) =>
+				entry.cells.some((cell) => cell.root === root && cell.depth === depth),
+			);
+			if (!level) {
+				break;
+			}
+			parts.push(`<${level.name}>`);
+			deepest = depth;
+		}
+		if (deepest === 0) {
+			continue;
+		}
+		rules.push(`${parts.join('/')}/**`);
+	}
+	return rules;
 }
 
 function looksLikeYears(values: Set<string>): boolean {

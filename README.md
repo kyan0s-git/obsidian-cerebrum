@@ -22,10 +22,14 @@ study; stepping in offers what is inside; the last step offers the notes.
 - **No path says the same thing twice.** A level that leads only one way is
   walked in a single click and folded into one crumb; a child that repeats its
   parent's name drops it; the breadcrumb never ends with the heading below it.
-- **The hierarchy is yours.** Nested tags (`#subject/physics`) and frontmatter
-  properties (`type: reference`) are found automatically; folder levels take one
-  pattern, `raw/<year>/<subject>/<unit>`. With none of those, folders are the
-  hierarchy and it still works.
+- **The hierarchy is yours, and nothing needs configuring.** Nested tags
+  (`#subject/physics`) and frontmatter properties (`type: reference`) are found
+  automatically, and folder patterns are read off the folders themselves.
+- **Trees of the same shape become one hierarchy.** If your sources, your own
+  notes and your write-ups live in three parallel trees, they line up by the
+  folder names they use rather than by depth — so a summary filed three folders
+  deeper than its source still lands in the same unit, and a folder called
+  `sources` never appears beside a unit it is not a sibling of.
 - **Tags stay cross-cutting**, like a blog archive: every tag with its count,
   and a tag page listing its notes wherever they live.
 - **Four devices borrowed from an encyclopaedia**, all read off your notes: the

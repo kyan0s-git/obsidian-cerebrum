@@ -1,6 +1,6 @@
 {
 	"name": "cerebrum",
-	"version": "1.7.1",
+	"version": "1.8.0",
 	"description": "Adaptive content browser and link graph for an Obsidian second brain.",
 	"main": "main.js",
 	"type": "module",

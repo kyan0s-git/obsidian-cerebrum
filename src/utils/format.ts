@@ -32,5 +32,22 @@ export function formatRelativeTime(timestamp: number): string {
 }
 
 export function formatCount(count: number, singular: string): string {
-	return `${count} ${count === 1 ? singular : `${singular}s`}`;
+	return `${count} ${count === 1 ? singular : pluralise(singular)}`;
+}
+
+/** Enough English to keep a count from reading "3 shelfs". */
+export function pluralise(word: string): string {
+	if (/(?:s|x|z|ch|sh)$/i.test(word)) {
+		return `${word}es`;
+	}
+	if (/f$/i.test(word)) {
+		return `${word.slice(0, -1)}ves`;
+	}
+	if (/fe$/i.test(word)) {
+		return `${word.slice(0, -2)}ves`;
+	}
+	if (/[^aeiou]y$/i.test(word)) {
+		return `${word.slice(0, -1)}ies`;
+	}
+	return `${word}s`;
 }

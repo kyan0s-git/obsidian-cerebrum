@@ -129,6 +129,22 @@ tree, naming a level `year` when most of its values look like years. It is
 wired to a button rather than run automatically, so the guess lands in an
 editable box instead of silently deciding the vault's structure.
 
+### Reading a vault's shape
+
+`detectRules` proposes the path patterns, and runs whenever no patterns are
+written. It does not align trees by depth. It collects, for every tree and
+every depth, the set of folder names used there, and clusters those sets by
+overlap: the units are wherever `unit-1` appears, whether that is the third
+segment of `raw/` or the fourth of `wiki/`. Clusters spanning several trees are
+the hierarchy; a cluster only one tree has is that tree's own filing and
+becomes a `kind`. The tree itself is emitted as a pinned segment,
+`<shelf=raw>`, which matches one folder and records it as a level.
+
+`patternNames` then decides the walk order: levels every rule declares, or whose
+place no other rule contests, come first; the pin comes next; levels only some
+rules declare come last. That is what keeps `sources` and `papers` behind the
+shelf that tells them apart.
+
 ## The walk
 
 `navigation.ts` turns the levels into a hierarchy to walk. Levels are already

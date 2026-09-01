@@ -210,7 +210,7 @@ export class CerebrumSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Folder level patterns')
 			.setDesc(
-				'One pattern per line naming each folder level, such as raw/<year>/<subject>/<unit>. Anything nested deeper stays with the level above it, and a note can override a level in its own frontmatter.',
+				'One pattern per line naming each folder level, such as raw/<year>/<subject>/<unit>. Leave this empty and the levels are worked out from your folders. Write <shelf=raw> to match one folder and record it as a level, which is how several trees of the same shape become one hierarchy. Anything nested deeper stays with the level above it, and a note can override a level in its own frontmatter.',
 			)
 			.addTextArea((area) => {
 				area
@@ -246,7 +246,7 @@ export class CerebrumSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Detect folder levels')
 			.setDesc(
-				'Reads the folders you already have and suggests a pattern for each top level tree. Rename the levels to taste.',
+				'Writes out the patterns the plugin is already using, so you can rename the levels or correct them. Trees of the same shape are matched by the folder names they use rather than by depth, so a summary filed deeper than its source still lands in the same unit.',
 			)
 			.addButton((button) =>
 				button.setButtonText('Detect').onClick(() => {

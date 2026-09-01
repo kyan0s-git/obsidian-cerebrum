@@ -123,10 +123,20 @@
 	color: var(--text-faint);
 }
 
+/*
+ * One row, one height. A search field, a dropdown and a button group are three
+ * different native heights left to themselves, and three controls that nearly
+ * line up read as a mistake rather than a row.
+ */
 .cerebrum-toolbar {
+	--cb-control: var(--input-height, 30px);
 	display: flex;
 	align-items: center;
-	gap: var(--cb-2);
+	gap: var(--cb-3);
+}
+
+.cerebrum-toolbar > * {
+	height: var(--cb-control);
 }
 
 .cerebrum-search {
@@ -152,19 +162,30 @@
 
 .cerebrum-search-input {
 	width: 100%;
-	padding-left: calc(var(--cb-8) + 2px);
+	height: var(--cb-control);
+	/* Written out of the parts, so the text keeps clear of the icon by the same
+	   amount the icon keeps clear of the edge. */
+	padding-left: calc(var(--cb-3) + var(--icon-s, 16px) + var(--cb-3));
 }
 
 .cerebrum-select {
 	max-width: 150px;
+	padding-top: 0;
+	padding-bottom: 0;
 }
 
 .cerebrum-mode-toggle {
 	display: inline-flex;
+	align-items: center;
 	gap: 2px;
 	padding: 2px;
 	border-radius: var(--radius-m, 8px);
 	background-color: var(--background-modifier-form-field);
+}
+
+.cerebrum-mode-toggle .clickable-icon {
+	height: calc(var(--cb-control) - 4px);
+	padding: 0 var(--cb-3);
 }
 
 .cerebrum-toolbar .clickable-icon.is-active,

@@ -13,6 +13,7 @@
 import type { CerebrumSettings } from '../settings';
 import type { FolderEntry, NoteEntry } from '../types';
 import type { VaultModel } from './vault-model';
+import { pluralise } from '../utils/format';
 import { matchesFilters } from './facets';
 
 /** One step of the walk: a level name and the value chosen for it. */
@@ -297,16 +298,9 @@ function escapeRegExp(value: string): string {
 
 /** "unit" describes one, "Units" heads a list of them. */
 function plural(name: string): string {
-	if (name === '') {
-		return '';
-	}
-	const capitalised = name.charAt(0).toUpperCase() + name.slice(1);
-	if (capitalised.endsWith('s')) {
-		return capitalised;
-	}
-	return capitalised.endsWith('y')
-		? `${capitalised.slice(0, -1)}ies`
-		: `${capitalised}s`;
+	return name === ''
+		? ''
+		: pluralise(name.charAt(0).toUpperCase() + name.slice(1));
 }
 
 /*

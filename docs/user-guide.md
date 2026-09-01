@@ -109,12 +109,54 @@ sources:
 | --- | --- | --- |
 | Nested tags | `#status/active` gives level `status`, value `active` | None |
 | Frontmatter properties | `type: reference` gives level `type` | None |
-| Folder paths | `raw/2026/physics/unit-3` | One pattern per tree |
+| Folder paths | `raw/2026/physics/unit-3` | Worked out from your folders, or one pattern per tree |
 
-Tags and properties name themselves, so Cerebrum finds them on its own: a vault
-that uses nested tags or consistent properties gets working levels the moment
-the plugin is enabled. Paths cannot name themselves, so they are the one source
-that asks you for a pattern.
+Tags and properties name themselves, so Cerebrum finds them on its own. Paths
+cannot, so Cerebrum reads the shape of your folders instead and writes the
+patterns for you; you only touch them to rename a level or correct a guess.
+
+### Several trees of the same shape
+
+A vault often files the same subjects more than once — the sources in one tree,
+your own notes in another, what you have written about them in a third:
+
+```
+raw/2026-2027/mun/unit-1/papers/…        the source itself
+personal/2026-2027/mun/unit-1/…          what you wrote in class
+wiki/2026-2027/mun/sources/unit-1/…      the summary of that source
+```
+
+Those are not three subjects. They are three kinds of material about one unit,
+and lining them up by depth is what makes a folder called `sources` look like a
+sibling of `unit 1` — one holds raw sources, the other holds writing about
+them, and the tree cannot tell you which is which.
+
+Cerebrum lines trees up by **the names their folders use**, not by how deep
+those names sit. `unit-1` is a unit wherever it appears, so all three trees
+collapse into one hierarchy, and the folder that differs becomes a level of its
+own:
+
+| Step | Values |
+| --- | --- |
+| year | `2026-2027` |
+| subject | `mun`, `ap-chemistry` |
+| unit | `unit-1`, `unit-2`, `course` |
+| shelf | `raw`, `personal`, `wiki` |
+| kind | `papers`, `articles`, `sources`, `topics` |
+
+So `unit 1` gathers everything about that unit, split by shelf; `sources` can
+only be reached through `wiki`, and `papers` only through `raw`. The two never
+sit side by side, because the path to each one says which it is.
+
+The shelf comes *after* the hierarchy even though it is the first folder in the
+path. A level with three fixed values is a refinement, and a browser that opens
+by asking which shelf you want has not narrowed anything. A level only some
+trees have — `kind` — comes after the shelf, because `sources` and `papers`
+only mean anything once you know which tree you are in.
+
+`<shelf=raw>` is the syntax for this: a pattern segment that matches one folder
+and records it as a level value. You will not normally write it, because
+detection does, but it is there if you want to name the level something else.
 
 ### Levels found automatically
 
