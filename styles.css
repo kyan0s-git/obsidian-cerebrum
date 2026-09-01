@@ -1,8 +1,27 @@
 /* Cerebrum: a vault read as a course, and its link graph. */
 
 /* ------------------------------------------------------------------ browser */
-
+/*
+ * Cerebrum's own spacing scale.
+ *
+ * Every value is an Obsidian token with the pixel value it is meant to be as a
+ * fallback. A theme that renames or drops a token then shifts this UI by a few
+ * pixels instead of collapsing it: `gap: var(--missing)` is not 4px off, it is
+ * zero, and a page of rows with no gaps is the whole layout gone.
+ */
 .cerebrum-explorer {
+	--cb-1: var(--size-2-1, 2px);
+	--cb-2: var(--size-2-2, 4px);
+	--cb-3: var(--size-4-2, 8px);
+	--cb-4: var(--size-4-3, 12px);
+	--cb-5: var(--size-4-4, 16px);
+	--cb-6: var(--size-4-5, 20px);
+	--cb-7: var(--size-4-6, 24px);
+	--cb-8: var(--size-4-8, 32px);
+	--cb-12: var(--size-4-12, 48px);
+	/* What a row is padded by, and therefore what the lists hang out by. */
+	--cb-row: var(--size-4-2, 8px);
+
 	height: 100%;
 	padding: 0;
 	overflow-y: auto;
@@ -15,26 +34,26 @@
 .cerebrum-page {
 	max-width: 780px;
 	margin: 0 auto;
-	padding: var(--size-4-6) var(--size-4-4) var(--size-4-12);
+	padding: var(--cb-8) var(--cb-5) var(--cb-12);
 }
 
 .cerebrum-header {
 	display: flex;
 	flex-direction: column;
 	/* The crumbs and the title are one unit; the toolbar is the next. */
-	gap: var(--size-2-1);
-	margin-bottom: var(--size-4-6);
+	gap: var(--cb-2);
+	margin-bottom: var(--cb-7);
 }
 
 .cerebrum-header .cerebrum-toolbar {
-	margin-top: var(--size-4-3);
+	margin-top: var(--cb-5);
 }
 
 /* The one vertical rhythm the body has. */
 .cerebrum-blocks {
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-4-7);
+	gap: var(--cb-8);
 }
 
 /* --------------------------------------------------------------- breadcrumb */
@@ -43,18 +62,18 @@
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: var(--size-2-1);
-	font-size: var(--font-ui-smaller);
+	gap: var(--cb-1);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-faint);
 }
 
 .cerebrum-crumb {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--size-2-2);
-	padding: 2px var(--size-2-2);
-	margin-left: calc(-1 * var(--size-2-2));
-	border-radius: var(--radius-s);
+	gap: var(--cb-2);
+	padding: 2px var(--cb-2);
+	margin-left: calc(-1 * var(--cb-2));
+	border-radius: var(--radius-s, 4px);
 	color: var(--text-muted);
 	cursor: pointer;
 }
@@ -79,8 +98,8 @@
 
 .cerebrum-crumb-icon .svg-icon,
 .cerebrum-crumb-sep .svg-icon {
-	width: var(--icon-xs);
-	height: var(--icon-xs);
+	width: var(--icon-xs, 14px);
+	height: var(--icon-xs, 14px);
 }
 
 /* -------------------------------------------------------------- title, tools */
@@ -89,25 +108,25 @@
 	display: flex;
 	align-items: baseline;
 	flex-wrap: wrap;
-	gap: var(--size-2-3);
+	gap: var(--cb-3);
 }
 
 .cerebrum-intro-title {
 	font-size: 1.6em;
-	font-weight: var(--font-semibold);
+	font-weight: var(--font-semibold, 600);
 	line-height: 1.2;
 	color: var(--text-normal);
 }
 
 .cerebrum-intro-count {
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-faint);
 }
 
 .cerebrum-toolbar {
 	display: flex;
 	align-items: center;
-	gap: var(--size-2-2);
+	gap: var(--cb-2);
 }
 
 .cerebrum-search {
@@ -120,20 +139,20 @@
 
 .cerebrum-search-icon {
 	position: absolute;
-	left: var(--size-2-3);
+	left: var(--cb-3);
 	display: inline-flex;
 	color: var(--text-faint);
 	pointer-events: none;
 }
 
 .cerebrum-search-icon .svg-icon {
-	width: var(--icon-s);
-	height: var(--icon-s);
+	width: var(--icon-s, 16px);
+	height: var(--icon-s, 16px);
 }
 
 .cerebrum-search-input {
 	width: 100%;
-	padding-left: calc(var(--size-4-6) + 2px);
+	padding-left: calc(var(--cb-8) + 2px);
 }
 
 .cerebrum-select {
@@ -144,7 +163,7 @@
 	display: inline-flex;
 	gap: 2px;
 	padding: 2px;
-	border-radius: var(--radius-m);
+	border-radius: var(--radius-m, 8px);
 	background-color: var(--background-modifier-form-field);
 }
 
@@ -159,14 +178,14 @@
 .cerebrum-tiles {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-	gap: var(--size-4-2);
+	gap: var(--cb-3);
 }
 
 .cerebrum-tile {
-	padding: var(--size-4-4) var(--size-4-3);
+	padding: var(--cb-5) var(--cb-4);
 	border: 1px solid var(--background-modifier-border);
 	border-top: 3px solid var(--cerebrum-accent, var(--interactive-accent));
-	border-radius: var(--radius-m);
+	border-radius: var(--radius-m, 8px);
 	background-color: var(--background-primary);
 	cursor: pointer;
 	transition: background-color 120ms ease, transform 120ms ease;
@@ -178,14 +197,14 @@
 }
 
 .cerebrum-tile-name {
-	font-size: var(--font-ui-medium);
-	font-weight: var(--font-medium);
+	font-size: var(--font-ui-medium, 15px);
+	font-weight: var(--font-medium, 500);
 	color: var(--text-normal);
 }
 
 .cerebrum-tile-count {
-	margin-top: var(--size-2-1);
-	font-size: var(--font-ui-smaller);
+	margin-top: var(--cb-1);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-faint);
 }
 
@@ -193,10 +212,10 @@
 
 /* The page that explains this place, given a card of its own above the list. */
 .cerebrum-lead {
-	padding: var(--size-4-3) var(--size-4-4);
+	padding: var(--cb-4) var(--cb-5);
 	border: 1px solid var(--background-modifier-border);
 	border-left: 3px solid var(--interactive-accent);
-	border-radius: var(--radius-m);
+	border-radius: var(--radius-m, 8px);
 	background-color: var(--background-primary-alt);
 	cursor: pointer;
 	transition: background-color 120ms ease;
@@ -209,29 +228,29 @@
 .cerebrum-lead-label {
 	display: flex;
 	align-items: center;
-	gap: var(--size-2-2);
-	font-size: var(--font-ui-smaller);
-	font-weight: var(--font-semibold);
+	gap: var(--cb-2);
+	font-size: var(--font-ui-smaller, 12px);
+	font-weight: var(--font-semibold, 600);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: var(--text-faint);
 }
 
 .cerebrum-lead-icon .svg-icon {
-	width: var(--icon-xs);
-	height: var(--icon-xs);
+	width: var(--icon-xs, 14px);
+	height: var(--icon-xs, 14px);
 }
 
 .cerebrum-lead-title {
-	margin-top: var(--size-2-2);
-	font-size: var(--font-ui-medium);
-	font-weight: var(--font-semibold);
+	margin-top: var(--cb-2);
+	font-size: var(--font-ui-medium, 15px);
+	font-weight: var(--font-semibold, 600);
 	color: var(--text-normal);
 }
 
 .cerebrum-lead-excerpt {
 	-webkit-line-clamp: 3;
-	font-size: var(--font-ui-small);
+	font-size: var(--font-ui-small, 13px);
 }
 
 /* ------------------------------------------------------- sections, lessons */
@@ -240,14 +259,14 @@
 .cerebrum-section {
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-2-3);
+	gap: var(--cb-4);
 }
 
 .cerebrum-section-header {
 	display: flex;
 	align-items: baseline;
-	gap: var(--size-2-3);
-	padding-bottom: var(--size-2-2);
+	gap: var(--cb-4);
+	padding-bottom: var(--cb-3);
 	border-bottom: 1px solid var(--background-modifier-border);
 	cursor: pointer;
 }
@@ -258,21 +277,21 @@
 
 .cerebrum-section-title {
 	flex: 1;
-	font-size: var(--font-ui-medium);
-	font-weight: var(--font-semibold);
+	font-size: var(--font-ui-medium, 15px);
+	font-weight: var(--font-semibold, 600);
 	color: var(--text-normal);
 }
 
 .cerebrum-section-title.is-quiet {
-	font-size: var(--font-ui-smaller);
-	font-weight: var(--font-semibold);
+	font-size: var(--font-ui-smaller, 12px);
+	font-weight: var(--font-semibold, 600);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: var(--text-faint);
 }
 
 .cerebrum-section-count {
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-faint);
 	white-space: nowrap;
 }
@@ -284,16 +303,16 @@
 .cerebrum-lessons {
 	display: flex;
 	flex-direction: column;
-	margin: 0 calc(-1 * var(--size-2-3));
+	margin: 0 calc(-1 * var(--cb-row));
 }
 
 /* A lesson row: an icon to anchor the eye, a title, and what it covers. */
 .cerebrum-lesson {
 	display: flex;
 	align-items: flex-start;
-	gap: var(--size-4-2);
-	padding: var(--size-2-3);
-	border-radius: var(--radius-s);
+	gap: var(--cb-4);
+	padding: var(--cb-row) var(--cb-row);
+	border-radius: var(--radius-s, 4px);
 	cursor: pointer;
 }
 
@@ -308,8 +327,8 @@
 }
 
 .cerebrum-lesson-icon .svg-icon {
-	width: var(--icon-s);
-	height: var(--icon-s);
+	width: var(--icon-s, 16px);
+	height: var(--icon-s, 16px);
 }
 
 .cerebrum-lesson-text {
@@ -327,7 +346,7 @@
 
 .cerebrum-lesson-excerpt {
 	margin-top: 2px;
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	line-height: 1.45;
 	color: var(--text-muted);
 	display: -webkit-box;
@@ -337,7 +356,7 @@
 }
 
 .cerebrum-lesson-time {
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-faint);
 	white-space: nowrap;
 	padding-top: 2px;
@@ -350,12 +369,12 @@
 
 .cerebrum-section-more {
 	align-self: flex-start;
-	margin-left: calc(-1 * var(--size-2-3));
+	margin-left: calc(-1 * var(--cb-row));
 	background: none;
 	border: none;
 	box-shadow: none;
-	padding: var(--size-2-2) var(--size-2-3);
-	font-size: var(--font-ui-smaller);
+	padding: var(--cb-2) var(--cb-3);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-accent);
 	cursor: pointer;
 }
@@ -370,17 +389,17 @@
 .cerebrum-tag-index {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--size-2-2);
+	gap: var(--cb-2);
 }
 
 .cerebrum-tag-chip {
 	display: inline-flex;
 	align-items: baseline;
-	gap: var(--size-2-2);
-	padding: var(--size-2-1) var(--size-2-3);
-	border-radius: var(--radius-l);
+	gap: var(--cb-2);
+	padding: var(--cb-1) var(--cb-3);
+	border-radius: var(--radius-l, 12px);
 	background-color: var(--background-modifier-form-field);
-	font-size: var(--font-ui-small);
+	font-size: var(--font-ui-small, 13px);
 	color: var(--text-muted);
 	cursor: pointer;
 }
@@ -391,7 +410,7 @@
 }
 
 .cerebrum-tag-count {
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-faint);
 }
 
@@ -400,17 +419,17 @@
 .cerebrum-refs {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--size-2-2);
+	gap: var(--cb-2);
 }
 
 .cerebrum-ref {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--size-2-2);
-	padding: var(--size-2-1) var(--size-2-3);
+	gap: var(--cb-2);
+	padding: var(--cb-1) var(--cb-3);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-l);
-	font-size: var(--font-ui-small);
+	border-radius: var(--radius-l, 12px);
+	font-size: var(--font-ui-small, 13px);
 	color: var(--text-muted);
 	cursor: pointer;
 }
@@ -426,8 +445,8 @@
 }
 
 .cerebrum-ref-icon .svg-icon {
-	width: var(--icon-xs);
-	height: var(--icon-xs);
+	width: var(--icon-xs, 14px);
+	height: var(--icon-xs, 14px);
 }
 
 /* The article footer: what this place files under. */
@@ -435,14 +454,14 @@
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
-	gap: var(--size-2-3);
-	padding-top: var(--size-4-3);
+	gap: var(--cb-3);
+	padding-top: var(--cb-4);
 	border-top: 1px solid var(--background-modifier-border);
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 }
 
 .cerebrum-categories-label {
-	font-weight: var(--font-semibold);
+	font-weight: var(--font-semibold, 600);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: var(--text-faint);
@@ -469,19 +488,19 @@
 	z-index: 2;
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--size-2-1);
-	padding: var(--size-2-3) var(--size-4-4);
-	margin: calc(-1 * var(--size-2-3)) calc(-1 * var(--size-4-4)) 0;
+	gap: var(--cb-1);
+	padding: var(--cb-3) var(--cb-5);
+	margin: calc(-1 * var(--cb-3)) calc(-1 * var(--cb-5)) 0;
 	border-bottom: 1px solid var(--background-modifier-border);
 	background-color: var(--background-primary);
 }
 
 .cerebrum-alphabet-letter {
 	min-width: 1.5em;
-	padding: var(--size-2-1);
-	border-radius: var(--radius-s);
+	padding: var(--cb-1);
+	border-radius: var(--radius-s, 4px);
 	text-align: center;
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-muted);
 	cursor: pointer;
 }
@@ -489,7 +508,7 @@
 /* In the index the letter is the anchor, so it carries more weight than the
    quiet headings elsewhere. */
 .cerebrum-index-group .cerebrum-section-title {
-	font-size: var(--font-ui-medium);
+	font-size: var(--font-ui-medium, 15px);
 	letter-spacing: 0;
 	color: var(--text-muted);
 }
@@ -505,10 +524,10 @@
 .cerebrum-utilities {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--size-4-3);
-	padding-top: var(--size-4-3);
+	gap: var(--cb-4);
+	padding-top: var(--cb-4);
 	border-top: 1px solid var(--background-modifier-border);
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 }
 
 .cerebrum-utility {
@@ -527,19 +546,19 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: var(--size-4-2);
-	padding: var(--size-4-8) var(--size-4-4);
+	gap: var(--cb-3);
+	padding: var(--cb-8) var(--cb-5);
 	text-align: center;
 	color: var(--text-muted);
 }
 
 .cerebrum-empty-title {
-	font-weight: var(--font-semibold);
+	font-weight: var(--font-semibold, 600);
 	color: var(--text-normal);
 }
 
 .cerebrum-empty-desc {
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	max-width: 380px;
 }
 
@@ -557,16 +576,16 @@
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: var(--size-2-2);
-	padding: var(--size-2-3) var(--size-4-3);
+	gap: var(--size-2-2, 4px);
+	padding: var(--size-2-3, 6px) var(--size-4-3, 12px);
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .cerebrum-depth {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--size-2-2);
-	font-size: var(--font-ui-smaller);
+	gap: var(--size-2-2, 4px);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-muted);
 }
 
@@ -590,15 +609,15 @@
 
 .cerebrum-graph-legend {
 	position: absolute;
-	top: var(--size-4-2);
-	right: var(--size-4-2);
+	top: var(--size-4-2, 8px);
+	right: var(--size-4-2, 8px);
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
 	max-width: 220px;
-	padding: var(--size-2-2);
+	padding: var(--size-2-2, 4px);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
+	border-radius: var(--radius-m, 8px);
 	background-color: var(--background-secondary);
 	opacity: 0.92;
 }
@@ -606,10 +625,10 @@
 .cerebrum-legend-item {
 	display: flex;
 	align-items: center;
-	gap: var(--size-2-2);
-	padding: 1px var(--size-2-2);
-	border-radius: var(--radius-s);
-	font-size: var(--font-ui-smaller);
+	gap: var(--size-2-2, 4px);
+	padding: 1px var(--size-2-2, 4px);
+	border-radius: var(--radius-s, 4px);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-muted);
 	cursor: pointer;
 }
@@ -639,9 +658,9 @@
 }
 
 .cerebrum-graph-status {
-	padding: var(--size-2-2) var(--size-4-3);
+	padding: var(--size-2-2, 4px) var(--size-4-3, 12px);
 	border-top: 1px solid var(--background-modifier-border);
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-faint);
 }
 
@@ -650,12 +669,12 @@
 .cerebrum-facet-chip {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--size-2-1);
-	padding: 1px var(--size-2-2);
+	gap: var(--size-2-1, 2px);
+	padding: 1px var(--size-2-2, 4px);
 	border: 1px solid var(--cerebrum-accent, var(--background-modifier-border));
-	border-radius: var(--radius-s);
+	border-radius: var(--radius-s, 4px);
 	background-color: var(--background-secondary);
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-normal);
 	cursor: pointer;
 }
@@ -668,11 +687,11 @@
 	color: var(--text-faint);
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-smaller, 12px);
 }
 
 .cerebrum-facet-value {
-	font-weight: var(--font-medium);
+	font-weight: var(--font-medium, 500);
 	color: var(--cerebrum-accent, var(--text-normal));
 }
 
@@ -682,8 +701,8 @@
 }
 
 .cerebrum-facet-remove .svg-icon {
-	width: var(--icon-xs);
-	height: var(--icon-xs);
+	width: var(--icon-xs, 14px);
+	height: var(--icon-xs, 14px);
 }
 
 .cerebrum-facet-chip:hover .cerebrum-facet-remove {
@@ -701,7 +720,7 @@
 }
 
 .is-mobile .cerebrum-page {
-	padding: var(--size-4-3) var(--size-4-2) var(--size-4-8);
+	padding: var(--size-4-3, 12px) var(--size-4-2, 8px) var(--size-4-8, 32px);
 }
 
 .is-mobile .cerebrum-tiles {

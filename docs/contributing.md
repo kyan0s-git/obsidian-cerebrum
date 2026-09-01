@@ -56,6 +56,12 @@ usually means the code would be rejected in community plugin review.
   events, and delegates everything else.
 - **One responsibility per module**, roughly 200–300 lines. Split a file rather
   than letting it sprawl.
+- **Every Obsidian variable that affects layout carries a fallback**:
+  `var(--size-4-3, 12px)`. A token that does not exist makes the whole
+  declaration invalid, so a missing `gap` is zero rather than close — the one
+  CSS mistake that does not degrade gracefully. `npm run lint` fails on a bare
+  one; the spacing scale itself lives in the `--cb-*` variables at the top of
+  `styles.css`.
 - **Tabs for indentation**, single quotes, trailing commas — match
   `.editorconfig` and the code around you.
 - **Comment the why.** The code says what it does; comments should explain a
