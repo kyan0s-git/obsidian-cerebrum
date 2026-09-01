@@ -62,6 +62,11 @@ usually means the code would be rejected in community plugin review.
   CSS mistake that does not degrade gracefully. `npm run lint` fails on a bare
   one; the spacing scale itself lives in the `--cb-*` variables at the top of
   `styles.css`.
+- **Rules for form controls are element-qualified**: `select.cerebrum-select`,
+  not `.cerebrum-select`. Obsidian styles its controls with attribute selectors
+  — `input[type=search]` is (0,1,1) and a bare class is (0,1,0), so the class
+  loses and the app's own padding silently stays. `npm run lint` fails on a
+  class applied to an `<input>` that is not element-qualified.
 - **Tabs for indentation**, single quotes, trailing commas — match
   `.editorconfig` and the code around you.
 - **Comment the why.** The code says what it does; comments should explain a

@@ -13,6 +13,7 @@ import {
 	resolvePlace,
 	seeAlso,
 } from '../core/navigation';
+import { compactNumber, vaultStats } from '../core/stats';
 import type { NoteEntry } from '../types';
 import { formatCount, formatRelativeTime } from '../utils/format';
 import { iconForExtension } from '../utils/icons';
@@ -78,6 +79,10 @@ function renderBrowse(container: HTMLElement, ctx: ExplorerContext): void {
 		return;
 	}
 
+	if (atHome) {
+		renderDashboard(container, ctx);
+	}
+
 	// The page about this place leads it, the way an article opens with what it
 	// is before it lists anything.
 	const lead = overviewNote(atHome ? 'Home' : place.title, place.notes);
@@ -96,11 +101,26 @@ function renderBrowse(container: HTMLElement, ctx: ExplorerContext): void {
 		}
 	}
 
+	// Notes that skip the next level still have somewhere to go.
+	if (place.strays.length > 0) {
+		const group = container.createDiv({ cls: 'cerebrum-blocks' });
+		if (place.children.length > 0 && place.strayLabel !== '') {
+			group.createDiv({
+				cls: 'cerebrum-section-title is-quiet',
+				text: place.strayLabel,
+			});
+		}
+		for (const child of place.strays) {
+			renderSection(group, ctx, child);
+		}
+	}
+
 	const rest = lead
 		? place.notes.filter((note) => note.path !== lead.path)
 		: place.notes;
 	if (rest.length > 0) {
-		const heading = place.children.length > 0 ? 'Also here' : '';
+		const heading =
+			place.children.length > 0 || place.strays.length > 0 ? 'Also here' : '';
 		renderNoteList(container, ctx, rest, heading);
 	}
 
@@ -240,6 +260,94 @@ function renderIndex(container: HTMLElement, ctx: ExplorerContext): void {
 			section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		});
 	}
+}
+
+/**
+ * The dashboard: what the vault amounts to, in the numbers worth knowing.
+ *
+ * A row of figures rather than a chart, because these are headline counts with
+ * no shape to plot — a bar chart of five unrelated totals says less than the
+ * five numbers do. Each one that leads somewhere is a link to it, so the
+ * dashboard is a way in and not only a readout.
+ */
+function renderDashboard(container: HTMLElement, ctx: ExplorerContext): void {
+	const stats = vaultStats(ctx.model, ctx.settings);
+	if (stats.notes === 0) {
+		return;
+	}
+	const loose = stats.orphans + stats.unresolved;
+
+	const tiles: {
+		label: string;
+		value: number;
+		hint: string;
+		go?: () => void;
+	}[] = [
+		{
+			label: 'Notes',
+			value: stats.notes,
+			hint:
+				stats.attachments > 0
+					? `and ${compactNumber(stats.attachments)} attachments`
+					: 'in the vault',
+			go: () => {
+				ctx.go({ screen: 'all', trail: [], tag: '', query: '' });
+			},
+		},
+		{
+			label: 'Links',
+			value: stats.links,
+			hint: `${percent(stats.connected, stats.notes)} of notes linked`,
+		},
+		{
+			label: 'Tags',
+			value: stats.tags,
+			hint: 'across the vault',
+			go: () => {
+				ctx.go({ screen: 'tags', trail: [], tag: '', query: '' });
+			},
+		},
+		{
+			label: 'Touched this week',
+			value: stats.updatedThisWeek,
+			hint: 'written or edited',
+		},
+		{
+			label: 'Loose ends',
+			value: loose,
+			hint: loose === 0 ? 'nothing to tidy' : 'orphans and missing pages',
+			go: () => {
+				ctx.go({ screen: 'loose', trail: [], tag: '', query: '' });
+			},
+		},
+	];
+
+	const board = container.createDiv({ cls: 'cerebrum-stats' });
+	for (const tile of tiles) {
+		const el = board.createEl(tile.go ? 'a' : 'div', {
+			cls: tile.go ? 'cerebrum-stat is-clickable' : 'cerebrum-stat',
+		});
+		el.createDiv({ cls: 'cerebrum-stat-value', text: compactNumber(tile.value) });
+		el.createDiv({ cls: 'cerebrum-stat-label', text: tile.label });
+		el.createDiv({ cls: 'cerebrum-stat-hint', text: tile.hint });
+		if (tile.go) {
+			el.addEventListener('click', tile.go);
+		}
+	}
+
+	// How the vault is organised, said in one line rather than five more tiles.
+	if (stats.shape.length > 0) {
+		container.createDiv({
+			cls: 'cerebrum-shape',
+			text: stats.shape
+				.map((entry) => formatCount(entry.values, entry.name))
+				.join(' · '),
+		});
+	}
+}
+
+function percent(part: number, whole: number): string {
+	return whole === 0 ? '0%' : `${Math.round((part / whole) * 100)}%`;
 }
 
 /** The home shelf. */

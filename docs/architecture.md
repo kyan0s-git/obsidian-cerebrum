@@ -12,6 +12,7 @@ src/
   constants.ts            view types, icons, debounce and paging constants
   types.ts                the shared vocabulary: NoteEntry, FolderEntry, LinkRef
   core/
+    stats.ts              what the vault amounts to, counted for the dashboard
     vault-model.ts        the index of folders, notes, tags, links and backlinks
     facets.ts             levels: patterns, tag and property discovery, counting
     navigation.ts         the walk: where am I, what is inside, what is here

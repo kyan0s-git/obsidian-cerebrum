@@ -14,6 +14,8 @@ needs no configuration.
 The vault reads as a course rather than a file tree. Home offers what you can
 study; stepping in offers what is inside; the last step offers the notes.
 
+- **A dashboard on the way in**: notes, links, tags, what you touched this week,
+  and what needs tidying — each a way into the screen it describes.
 - **One decision per screen.** Home is a shelf of tiles, a step in is a set of
   sections with their first few notes, the end is a plain list. Nothing else
   competes for the same glance.

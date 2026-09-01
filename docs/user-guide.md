@@ -38,12 +38,30 @@ reverse, because each move is recorded the way Obsidian records opening a file.
 
 | Screen | Shows |
 | --- | --- |
-| **Home** | One tile per value of your first level — the subjects, or the top folders when you have no levels. Underneath, quiet links to all notes, tags and loose ends |
+| **Home** | A dashboard of what the vault amounts to, then one tile per value of your first level — the subjects, or the top folders when you have no levels. Underneath, quiet links to all notes, tags and loose ends |
 | **A step in** | Each value of the next level as a section, with the first few notes under it and a way into the rest — the way a course lists units with their lessons. Underneath: what this place links out to, and the tags it files under |
 | **The last step** | A plain list of notes, in the order you chose |
 | **All notes** | Every note under its initial, with the alphabet across the top. Names only, with where each one sits on the right |
 | **Tags** | Every tag with its count, like a blog archive. A tag lists its notes wherever they live |
 | **Loose ends** | Pages you have linked but never written, and notes nothing links to |
+
+### The dashboard
+
+Home opens with five figures: **notes**, **links** (and what share of notes are
+linked at all), **tags**, **touched this week**, and **loose ends**. Three of
+them are the way into the screen they describe. Under them, one line says how
+the vault is organised — `1 year · 3 subjects · 4 units · 3 shelves`.
+
+They are counts, not a chart: five unrelated totals have no shape to plot, and
+plotting them would say less than the numbers do.
+
+### Notes that skip a level
+
+A page can belong to a subject without belonging to any of its units — a
+`concepts/` or `entities/` folder filed at the class, say. Rather than dropping
+those into a flat list of leftovers, the screen offers the next level they *do*
+answer to, under its own heading. **Also here** then holds only what genuinely
+has nowhere further to go.
 
 ### Paths that only ever lead one way
 

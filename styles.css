@@ -127,6 +127,11 @@
  * One row, one height. A search field, a dropdown and a button group are three
  * different native heights left to themselves, and three controls that nearly
  * line up read as a mistake rather than a row.
+ *
+ * Every rule here is written against the element as well as the class. Obsidian
+ * styles `input[type=search]` and `select`, and an attribute or type selector
+ * outranks a bare class — so a rule that reads correctly still loses, silently,
+ * and the app's own padding stays where it was.
  */
 .cerebrum-toolbar {
 	--cb-control: var(--input-height, 30px);
@@ -135,7 +140,9 @@
 	gap: var(--cb-3);
 }
 
-.cerebrum-toolbar > * {
+.cerebrum-toolbar > .cerebrum-search,
+.cerebrum-toolbar > select.cerebrum-select,
+.cerebrum-toolbar > .cerebrum-mode-toggle {
 	height: var(--cb-control);
 }
 
@@ -160,15 +167,19 @@
 	height: var(--icon-s, 16px);
 }
 
-.cerebrum-search-input {
+.cerebrum-search input.cerebrum-search-input {
 	width: 100%;
 	height: var(--cb-control);
 	/* Written out of the parts, so the text keeps clear of the icon by the same
 	   amount the icon keeps clear of the edge. */
 	padding-left: calc(var(--cb-3) + var(--icon-s, 16px) + var(--cb-3));
+	padding-inline-start: calc(var(--cb-3) + var(--icon-s, 16px) + var(--cb-3));
+	/* Obsidian draws its own magnifier on a search field; ours is in the markup,
+	   positioned against the same variable. */
+	background-image: none;
 }
 
-.cerebrum-select {
+select.cerebrum-select {
 	max-width: 150px;
 	padding-top: 0;
 	padding-bottom: 0;
@@ -183,7 +194,7 @@
 	background-color: var(--background-modifier-form-field);
 }
 
-.cerebrum-mode-toggle .clickable-icon {
+.cerebrum-mode-toggle button.clickable-icon {
 	height: calc(var(--cb-control) - 4px);
 	padding: 0 var(--cb-3);
 }
@@ -192,6 +203,63 @@
 .cerebrum-graph-toolbar .clickable-icon.is-active {
 	color: var(--text-on-accent);
 	background-color: var(--interactive-accent);
+}
+
+/* ---------------------------------------------------------------- dashboard */
+
+/*
+ * A row of figures, not a chart. Five unrelated totals have no shape to plot,
+ * and a bar chart of them would say less than the numbers do.
+ */
+.cerebrum-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: var(--cb-4);
+}
+
+.cerebrum-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	padding: var(--cb-4) var(--cb-4) var(--cb-4) var(--cb-5);
+	border-left: 2px solid var(--background-modifier-border);
+	color: var(--text-normal);
+}
+
+a.cerebrum-stat.is-clickable {
+	cursor: pointer;
+	text-decoration: none;
+}
+
+a.cerebrum-stat.is-clickable:hover {
+	border-left-color: var(--interactive-accent);
+	background-color: var(--background-modifier-hover);
+}
+
+/* Proportional figures: tabular digits read loose at this size. */
+.cerebrum-stat-value {
+	font-size: 1.7em;
+	font-weight: var(--font-semibold, 600);
+	line-height: 1.1;
+	color: var(--text-normal);
+}
+
+.cerebrum-stat-label {
+	font-size: var(--font-ui-smaller, 12px);
+	font-weight: var(--font-medium, 500);
+	color: var(--text-muted);
+}
+
+.cerebrum-stat-hint {
+	font-size: var(--font-ui-smaller, 12px);
+	color: var(--text-faint);
+}
+
+/* How the vault is organised, in one line rather than five more tiles. */
+.cerebrum-shape {
+	margin-top: calc(-1 * var(--cb-6));
+	font-size: var(--font-ui-smaller, 12px);
+	color: var(--text-faint);
 }
 
 /* --------------------------------------------------------------- home tiles */

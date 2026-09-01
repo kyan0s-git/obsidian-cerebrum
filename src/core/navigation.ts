@@ -53,6 +53,14 @@ export interface NavPlace {
 	childLabel: string;
 	/** The same, for exactly one of them: "unit", "folder". */
 	childName: string;
+	/**
+	 * Children found further down the levels, for notes that skip the next one.
+	 * A class's `concepts` pages belong to no unit, so without this they fall
+	 * out of the walk and pile up under "Also here".
+	 */
+	strays: NavChild[];
+	/** What those are called: "Kinds". */
+	strayLabel: string;
 	children: NavChild[];
 	/** Notes at exactly this point, not inside one of the children. */
 	notes: NoteEntry[];
@@ -114,6 +122,23 @@ export function resolvePlace(
 	// The heading is the last crumb, so both say the place the same way.
 	const title = crumbs[crumbs.length - 1]?.label ?? 'Home';
 
+	const here = allNotes.filter(
+		(note) => !isInsideChild(note, trail, axes, folderMode),
+	);
+	const stray = strayChildren(trail, axes, here, folderMode);
+	const inStray = new Set<string>();
+	for (const child of stray.children) {
+		const step = child.steps[0];
+		if (!step) {
+			continue;
+		}
+		for (const note of here) {
+			if ((note.facets[step.name] ?? []).includes(step.value)) {
+				inStray.add(note.path);
+			}
+		}
+	}
+
 	return {
 		crumbs,
 		title,
@@ -124,9 +149,57 @@ export function resolvePlace(
 			// A unit called "physics unit 1" inside physics says physics twice.
 			label: trimRepeat(child.label, title),
 		})),
-		notes: allNotes.filter((note) => !isInsideChild(note, trail, axes, folderMode)),
+		strays: stray.children,
+		strayLabel: stray.label,
+		notes: here.filter((note) => !inStray.has(note.path)),
 		allNotes,
 	};
+}
+
+/**
+ * A way on for the notes that have no value for the next level.
+ *
+ * A class's `concepts` and `entities` pages sit in no unit at all, so the unit
+ * step has nothing to offer them. They do have a level further down, though, so
+ * the walk skips ahead to the first one they answer to rather than dropping
+ * them into a flat list of leftovers.
+ */
+function strayChildren(
+	trail: TrailStep[],
+	axes: string[],
+	here: NoteEntry[],
+	folderMode: boolean,
+): { label: string; children: NavChild[] } {
+	if (folderMode || here.length === 0) {
+		return { label: '', children: [] };
+	}
+	for (let index = trail.length + 1; index < axes.length; index++) {
+		const name = axes[index];
+		if (name === undefined) {
+			continue;
+		}
+		const counts = new Map<string, number>();
+		for (const note of here) {
+			for (const value of note.facets[name] ?? []) {
+				counts.set(value, (counts.get(value) ?? 0) + 1);
+			}
+		}
+		if (counts.size === 0) {
+			continue;
+		}
+		return {
+			label: plural(name),
+			children: Array.from(counts.entries())
+				.map(([value, noteCount]) => ({
+					label: value,
+					steps: [{ name, value }],
+					noteCount,
+					hasChildren: index < axes.length - 1,
+				}))
+				.sort((a, b) => compareLabels(a.label, b.label)),
+		};
+	}
+	return { label: '', children: [] };
 }
 
 /**
